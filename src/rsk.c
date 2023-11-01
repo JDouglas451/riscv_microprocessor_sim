@@ -7,6 +7,14 @@
 /* RISC-V Sim Kernel/Shell Interface definition */
 #include "rskapi.h"
 
+// RISC-V Sim Info
+char* riscv_sim_info[] = {
+    "author=jdoug344",
+    "api=1.0",
+    "mockup",
+    NULL
+};
+
 struct rvi64_cpu {
     // Running
     int is_running;
@@ -23,14 +31,7 @@ struct rvi64_cpu {
 
 
 char** rsk_info(void) {
-    const char* const info[] = {
-        "author=jdoug344",
-        "api=1.0",
-        "mockup",
-        NULL
-    };
-
-    return info;
+    return riscv_sim_info;
 }
 
 void rsk_disasm(dword address, dword instruction, char* buffer, size_t size) {
