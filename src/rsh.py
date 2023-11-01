@@ -268,7 +268,7 @@ class rskHostServices(ctypes.Structure):
     MEM_LOAD_DWORD_TYPE = ctypes.CFUNCTYPE(ctypes.c_ulong, ctypes.c_ulong)
 
 	# void (*mem_store_dword)(dword address, dword value);
-    MEM_STORE_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_ulong, ctypes.c_ulong)
+    MEM_STORE_DWORD_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_ulong, ctypes.c_ulong)
 
 	# word (*mem_load_word)(dword address);
     MEM_LOAD_WORD_TYPE = ctypes.CFUNCTYPE(ctypes.c_uint, ctypes.c_ulong)
@@ -1028,13 +1028,18 @@ def mockup_tests(rsk : RISCVSimKernel) -> None:
     if not (rsk.config_get() & RC_TRACE_LOG):
         panic("Unable to verify that rsk_config_set/rsk_config_set work...")
 
-    # How about register setting?
-    regvalues = [random.randint(0, 2**64-1) for i in range(32)]
-    for i, val in enumerate(regvalues):
+    # Does the zero register always contain zero?
+    rsk.reg_set(0, 451)
+    if rsk.reg_get(0) != 0:
+        panic("Unable to verify that rsk_reg_set/rsk_reg_get work for x0...")
+
+    # Does getting/setting the other registers work?
+    regvalues = [random.randint(0, 2**64-1) for i in range(31)]
+    for i, val in enumerate(regvalues, start=1):
         rsk.reg_set(i, val)
-    for i, val in enumerate(regvalues):
+    for i, val in enumerate(regvalues, start=1):
         if rsk.reg_get(i) != val:
-            panic("Unable to verify that rsk_reg_set/rsk_reg_get work...")
+            panic("Unable to verify that rsk_reg_set/rsk_reg_get work for x1 - x31...")
     
     # Does setting pc work?
     value = random.randint(0, 2**64-1)
