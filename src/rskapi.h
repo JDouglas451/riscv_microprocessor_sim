@@ -92,7 +92,7 @@ typedef struct rsk_stats {
 // ----- (functions available to the host) ----- //
 
 // Return a pointer to a NULL-terminated list of NUL-terminated C-strings describing the kernel's features
-char** rsk_info(void);
+const char* const* rsk_info(void);
 
 // Disassemble a given 64-bit RISC-V <instruction> into the string buffer provided. The <address> where the instruction is found in memory is only required to calculate branch targets.
 void rsk_disasm(dword address, dword instruction, char* buffer, size_t size);

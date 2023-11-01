@@ -8,7 +8,7 @@
 #include "rskapi.h"
 
 // RISC-V Sim Info
-char* riscv_sim_info[] = {
+const char* const riscv_sim_info[] = {
     "author=jdoug344",
     "api=1.0",
     "mockup",
@@ -30,7 +30,7 @@ struct rvi64_cpu {
 } cpu;
 
 
-char** rsk_info(void) {
+const char* const* rsk_info(void) {
     return riscv_sim_info;
 }
 
