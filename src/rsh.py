@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # RISC-V Sim Host (or RISC-V sim shell, if you prefer)
-# (c) 2016-2023, Bob Jones University
+# (c) 2023, Bob Jones University
 
 import argparse
 import ast
@@ -17,7 +17,7 @@ import threading
 import time
 from typing import Optional
 
-__version__ = "2023-09-04-1200"
+__version__ = "2023-11-01-1200"
 
 try:
     import msvcrt
@@ -627,32 +627,68 @@ class RISCVSimShell:
             else:
                 self._ram[address] = value
 
-    # TODO: Format log trace to show only changed registers
+    # TODO: Test log trace
+    # Used to cache previous register values for log_trace()
+    self.register_history = [0 for i in range(32)]
+
     def log_trace(self, step : int, pc : int, *gprs) -> None:
         if self._tlog:
+            # Get checksum
+            cksum = self.md5() if self._show_md5 else "-"*32
+
+            # Begin log entry
+            print("{0:06} {1:08x} {2}".format(step, pc, cksum))
+
+            # Print changed registers
+            col_width = 4
+            col = 0
+            print("\t\t", end='')
+            for i in range(32):
+                if self.register_history[i] != gprs[i]:
+                    print("{0}={1:08x} ".format(i, gprs[i]), end='')
+
+                    col += 1
+                    if col == col_width:
+                        print('\n\t\t', end='')
+                        col = 0
+
+            # Print dissasembly
             if self._disasm_func:
                 iaddr = pc
                 iword = self._ram[iaddr >> 2]
-                disasm = "\n        ({0})".format(self._disasm_func(iaddr, iword))
-            else:
-                disasm = ""
-            cksum = self.md5() if self._show_md5 else "-"*32
-            print("""\
-{0:06} {1:08x} {2}\n\
- 1={4:08x}  2={5:08x}  3={6:08x}  4={7:08x}\n\
- 5={8:08x}  6={9:08x}  7={10:08x}  8={11:08x}\n\
- 9={12:08x} 10={13:08x} 11={14:08x} 12={15:08x}\n\
-13={16:08x} 14={17:08x} 15={18:08x} 16={19:08x}\n\
-17={20:08x} 18={21:08x} 19={22:08x} 20={23:08x}\n\
-21={24:08x} 22={25:08x} 23={26:08x} 24={27:08x}\n\
-25={28:08x} 26={29:08x} 27={30:08x} 28={31:08x}\n\
-29={32:08x} 30={33:08x} 31={34:08x}\n\
-{35}
-""".format(step, pc, cksum, *gprs, disasm), file=self._tlog)
+                print("\t\t({0})".format(self._disasm_func(iaddr, iword)))
+
             self._tlog.flush()
 
         for listener in self._beats:
             listener.heartbeat(step)
+
+#     # TODO: Format log trace to show only changed registers
+#     def log_trace(self, step : int, pc : int, *gprs) -> None:
+#         if self._tlog:
+#             if self._disasm_func:
+#                 iaddr = pc
+#                 iword = self._ram[iaddr >> 2]
+#                 disasm = "\n        ({0})".format(self._disasm_func(iaddr, iword))
+#             else:
+#                 disasm = ""
+#             cksum = self.md5() if self._show_md5 else "-"*32
+#             print("""\
+# {0:06} {1:08x} {2}\n\
+#  1={4:08x}  2={5:08x}  3={6:08x}  4={7:08x}\n\
+#  5={8:08x}  6={9:08x}  7={10:08x}  8={11:08x}\n\
+#  9={12:08x} 10={13:08x} 11={14:08x} 12={15:08x}\n\
+# 13={16:08x} 14={17:08x} 15={18:08x} 16={19:08x}\n\
+# 17={20:08x} 18={21:08x} 19={22:08x} 20={23:08x}\n\
+# 21={24:08x} 22={25:08x} 23={26:08x} 24={27:08x}\n\
+# 25={28:08x} 26={29:08x} 27={30:08x} 28={31:08x}\n\
+# 29={32:08x} 30={33:08x} 31={34:08x}\n\
+# {35}
+# """.format(step, pc, cksum, *gprs, disasm), file=self._tlog)
+#             self._tlog.flush()
+
+#         for listener in self._beats:
+#             listener.heartbeat(step)
     
     def log_msg(self, msg):
         if self._dlog:

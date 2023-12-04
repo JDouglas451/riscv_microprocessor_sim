@@ -15,17 +15,23 @@ const char* const riscv_sim_info[] = {
     NULL
 };
 
+// RV64I CPU struct
 struct rvi64_cpu {
-    // Running
     int is_running;
 
-    // Configuration
+    // Configuration setting
     rsk_config_t config;
+
+    // Host services struct
     rsk_host_services_t host;
+
+    // CPU statistics struct
     rsk_stat_t stats;
 
     // Registers (x[0] is included to keep the index values consistent with the register names. It should not be written to and should always read 0)
     dword x[32];
+    
+    // Program counter
     dword pc;
 } cpu;
 
