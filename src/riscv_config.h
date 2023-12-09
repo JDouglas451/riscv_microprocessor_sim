@@ -1,6 +1,7 @@
 #ifndef RISCV_SIM_CONFIG
 #define RISCV_SIM_CONFIG
 
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
