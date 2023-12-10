@@ -7,7 +7,12 @@
 
 // Simulator data structures and typedefs
 #include "riscv_config.h"
+
+// Cpu structs header and forward declaration
 #include "riscv64_cpu.h"
+typedef struct riscv64_cpu riscv_cpu_t;
+dword cpu_read_register(const riscv_cpu_t* const cpu, int index);
+void cpu_write_register(const riscv_cpu_t* const cpu, int index, dword value);
 
 // ---------- RISC-V Instruction Definitions ----------
 
@@ -67,7 +72,7 @@ size_t registry_append(riscv_registry_t* const registry, size_t new_types_count,
 riscv_instr_t* registry_search(const riscv_registry_t* const registry, dword instr) {
     for (size_t i = 0; i < registry->count; i++) {
         riscv_instr_t* itype = registry->type_links[i];
-        if (itype->mask & instr == itype->required_bits) return itype;
+        if ((itype->mask & instr) == itype->required_bits) return itype;
     }
 
     return NULL;

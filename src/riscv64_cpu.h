@@ -7,7 +7,13 @@
 
 // Simulator data structures and typedefs
 #include "riscv_config.h"
+
+// 64-bit instruction structs and forward declarations
 #include "riscv64_instr.h"
+typedef struct riscv64_instruction_type riscv_instr_t;
+typedef struct riscv64_instruction_type_registry riscv_registry_t;
+size_t registry_append(riscv_registry_t* const registry, size_t new_types_count, riscv_instr_t* const new_types);
+riscv_instr_t* registry_search(const riscv_registry_t* const registry, dword instr);
 
 // rv64im
 #include "rv64i_instr.h"
