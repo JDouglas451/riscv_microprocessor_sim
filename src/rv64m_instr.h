@@ -3,17 +3,6 @@
 
 // The RV64M Standard Extension for Integer Multiplication and Division
 
-// Simulator data structures and typedefs
-#include "riscv_config.h"
-
-#include "riscv64_cpu.h"
-typedef struct riscv64_cpu riscv_cpu_t;
-dword cpu_read_register(const riscv_cpu_t* const cpu, int index);
-void cpu_write_register(const riscv_cpu_t* const cpu, int index, dword value);
-
-#include "riscv64_instr.h"
-typedef struct riscv64_instruction_type riscv_instr_t;
-
 // ---------- Disassembly and Execution Functions ----------
 
 // Multiply (mul)

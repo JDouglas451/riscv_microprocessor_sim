@@ -1,18 +1,8 @@
-#ifndef SIM_RISCV64_INSTR
-#define SIM_RISCV64_INSTR
+#include "riscv64.h"
 
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-// Simulator data structures and typedefs
-#include "riscv_config.h"
-
-// Cpu structs header and forward declaration
-#include "riscv64_cpu.h"
-typedef struct riscv64_cpu riscv_cpu_t;
-dword cpu_read_register(const riscv_cpu_t* const cpu, int index);
-void cpu_write_register(const riscv_cpu_t* const cpu, int index, dword value);
 
 // ---------- RISC-V Instruction Definitions ----------
 
@@ -216,4 +206,218 @@ static inline sdword jtype_imm(dword instr) {
 #define LOAD_WORD(addr)  cpu->host.mem_load_word(addr)
 #define LOAD_DWORD(addr) cpu->host.mem_load_dword(addr)
 
-#endif
+// ---------- Instruction Set Headers ----------
+
+#include "rv64i_instr.h"
+extern const size_t rv64i_size;
+extern riscv_instr_t* rv64i_instructions;
+
+#include "rv64m_instr.h"
+extern const size_t rv64m_size;
+extern riscv_instr_t* rv64m_instructions;
+
+// ---------- CPU Constants (for verbosity) ----------
+
+#define REGISTER_COUNT 32
+
+// ---------- CPU Data Structures ----------
+
+// RISC-V bit CPU struct
+typedef struct riscv64_cpu {
+    int is_running;
+
+    // Configuration setting
+    rsk_config_t config;
+
+    // Host services struct
+    rsk_host_services_t host;
+    
+    // CPU statistics struct
+    rsk_stat_t stats;
+
+	// A registry of implemented risc-v instruction types
+	riscv_registry_t instruction_set;
+
+    // Program counter
+    dword pc;
+
+    // Registers (x[0] is included to keep the index values consistent with the register names. It should not be written to and should always read 0)
+    dword x[REGISTER_COUNT];
+} riscv_cpu_t;
+
+// ---------- CPU Methods ----------
+
+void cpu_init(riscv_cpu_t* cpu, const rsk_host_services_t* const services) {
+    cpu->is_running = 0;
+	cpu->config = rc_nothing;
+
+	cpu->host.mem_load_byte   = services->mem_load_byte;
+	cpu->host.mem_store_byte  = services->mem_store_byte;
+	cpu->host.mem_load_hword  = services->mem_load_hword;
+	cpu->host.mem_store_hword = services->mem_store_hword;
+	cpu->host.mem_load_word   = services->mem_load_word;
+	cpu->host.mem_store_word  = services->mem_store_word;
+	cpu->host.mem_load_dword  = services->mem_load_dword;
+	cpu->host.mem_store_dword = services->mem_store_dword;
+
+	cpu->host.log_trace = services->log_trace;
+	cpu->host.log_msg   = services->log_msg;
+	cpu->host.panic     = services->panic;
+
+	cpu->stats.instructions = 0;
+	cpu->stats.loads        = 0;
+	cpu->stats.load_misses  = 0;
+	cpu->stats.stores       = 0;
+	cpu->stats.store_misses = 0;
+
+	// rv64i
+	registry_append(&cpu->instruction_set, rv64i_size, rv64i_instructions);
+	// rv64m
+	registry_append(&cpu->instruction_set, rv64m_size, rv64m_instructions);
+
+	cpu->pc = 0;
+	for (int i = 0; i < REGISTER_COUNT; i++) cpu->x[i] = 0;
+}
+
+int cpu_is_running(const riscv_cpu_t* const cpu) {
+    return cpu->is_running;
+}
+
+rsk_config_t cpu_get_config(const riscv_cpu_t* const cpu) {
+    return cpu->config;
+}
+
+void cpu_set_config(riscv_cpu_t* const cpu, rsk_config_t config) {
+    cpu->config = config;
+}
+
+byte cpu_load_byte(const riscv_cpu_t* const cpu, dword address) {
+    return cpu->host.mem_load_byte(address);
+}
+
+void cpu_store_byte(const riscv_cpu_t* const cpu, dword address, byte value) {
+    cpu->host.mem_store_byte(address, value);
+}
+
+hword cpu_load_hword(const riscv_cpu_t* const cpu, dword address) {
+    return cpu->host.mem_load_hword(address);
+}
+
+void cpu_store_hword(const riscv_cpu_t* const cpu, dword address, hword value) {
+    cpu->host.mem_store_hword(address, value);
+}
+
+word cpu_load_word(const riscv_cpu_t* const cpu, dword address) {
+    return cpu->host.mem_load_word(address);
+}
+
+void cpu_store_word(const riscv_cpu_t* const cpu, dword address, word value) {
+    cpu->host.mem_store_word(address, value);
+}
+
+dword cpu_load_dword(const riscv_cpu_t* const cpu, dword address) {
+    return cpu->host.mem_load_dword(address);
+}
+
+void cpu_store_dword(const riscv_cpu_t* const cpu, dword address, dword value) {
+    cpu->host.mem_store_dword(address, value);
+}
+
+dword cpu_get_pc(const riscv_cpu_t* const cpu) {
+    return cpu->pc;
+}
+
+void cpu_set_pc(riscv_cpu_t* const cpu, dword address) {
+    cpu->pc = address;
+}
+
+dword cpu_read_register(const riscv_cpu_t* const cpu, int index) {
+	if (0 > index || index >= REGISTER_COUNT) cpu->host.panic("Register access out of bounds");
+
+	if (0 == index) return 0;
+	return cpu->x[index];
+}
+
+void cpu_write_register(const riscv_cpu_t* const cpu, int index, dword value) {
+	if (0 > index || index >= REGISTER_COUNT) cpu->host.panic("Register access out of bounds");
+
+	if (0 == index) return;
+	cpu->x[index] == value;
+}
+
+void cpu_process_signal(riscv_cpu_t* const cpu, rsk_signal_t signal) {
+    if (signal == rs_halt) {
+        cpu->is_running = 0;
+    }
+}
+
+void cpu_log_trace(const riscv_cpu_t* const cpu) {
+    cpu->host.log_trace(cpu->stats.instructions, cpu->pc, cpu->x);
+}
+
+void cpu_log_message(const riscv_cpu_t* cpu, const char* const message) {
+    cpu->host.log_msg(message);
+}
+
+void cpu_panic(const riscv_cpu_t* const cpu, const char* message) {
+    cpu->host.panic(message);
+}
+
+void cpu_fill_stats(const riscv_cpu_t* const cpu, rsk_stat_t* stats) {
+    if (NULL == stats) return;
+
+    stats->instructions = cpu->stats.instructions;
+    stats->loads = cpu->stats.loads;
+    stats->stores = cpu->stats.stores;
+    stats->load_misses = cpu->stats.load_misses;
+    stats->store_misses = cpu->stats.store_misses;
+}
+
+void cpu_disassemble(const riscv_cpu_t* const cpu, char* buffer, size_t buffer_size) {
+	// TODO: fix extreme and potentially inaccurate solution to buffer validation
+	if (buffer_size < 32) return;
+
+	char* bp = buffer;
+	size_t bps = buffer_size;
+
+	// get current instruction an add to disasm buffer
+	dword instr = cpu->host.mem_load_dword(cpu->pc);
+	int len = snprintf(bp, bps, "%#.8lx   ");
+	bp += 13;
+	bps -= 13;
+
+	// get the instruction type
+	riscv_instr_t* itype = registry_search(&cpu->instruction_set, instr);
+	if (NULL == itype) {
+		bp[0] = '?';
+		bp[1] = '\0';
+	}
+
+	// disassemble instruction
+	len = itype->disassemble(cpu, instr, bp, bps);
+}
+
+// Execute the instruction at pc and return 0 if ebreak was hit
+int cpu_execute(riscv_cpu_t* const cpu) {
+	cpu->is_running = 1;
+
+	// get current instruction an add to disasm buffer
+	dword instr = cpu->host.mem_load_dword(cpu->pc);
+	if (instr == RV64I_EBREAK) {
+		cpu->is_running = 0;
+		return 0;
+	}
+
+	// get the instruction type
+	riscv_instr_t* itype = registry_search(&cpu->instruction_set, instr);
+	if (NULL == itype) {
+		cpu->host.panic("Unrecognized instruction!");
+		return;
+	}
+
+	int updated_pc = 0;
+	itype->execute(cpu, instr, &updated_pc);
+	if (!updated_pc) cpu->pc += 4;
+
+	return 1;
+}

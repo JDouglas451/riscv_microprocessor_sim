@@ -7,11 +7,10 @@
 #ifndef RISCV_SIM_KERNEL_API
 #define RISCV_SIM_KERNEL_API
 
-// Simulator data structures and typedefs
-#include "riscv_config.h"
-
 #include <stddef.h>
 #include <stdint.h>
+
+#include "riscv64.h"
 
 // rskAPI functions must be exported with "C" linkage, even if implemented in C++
 #ifdef __cplusplus

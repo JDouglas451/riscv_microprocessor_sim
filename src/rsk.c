@@ -11,9 +11,8 @@
 // RISC-V Sim Kernel/Shell Interface definition
 #include "rskapi.h"
 
-// Simulator data structures and typedefs
-#include "riscv_config.h"
-#include "riscv64_cpu.h"
+// Simulator data structures, typedefs, and instructions
+#include "riscv64.h"
 
 // ---------- Simulator Information ----------
 
@@ -24,7 +23,7 @@ const char* const riscv_sim_info[] = {
     NULL
 };
 
-riscv_cpu_t sim_cpu;
+riscv_cpu_t cpu;
 
 // ---------- API Function Definitions ----------
 
@@ -33,60 +32,54 @@ const char* const* rsk_info(void) {
 }
 
 void rsk_disasm(dword instruction, char* buffer, size_t size) {
-	cpu_disassemble(&sim_cpu, buffer, size);
+	cpu_disassemble(&cpu, buffer, size);
 }
 
 void rsk_init(const rsk_host_services_t* services) {
-    cpu_init(&sim_cpu, services);
-    sim_cpu.host.log_msg("CPU initialized");
+    cpu_init(&cpu, services);
+    cpu_log_message(&cpu, "CPU initialized");
 }
 
 void rsk_config_set(rsk_config_t flags) {
-    sim_cpu.config = flags;
+    cpu_set_config(&cpu, flags);
 }
 
 rsk_config_t rsk_config_get(void) {
-    return sim_cpu.config;
+    return cpu_get_config(&cpu);
 }
 
 void rsk_stats_report(rsk_stat_t* stats) {
-    stats->instructions = sim_cpu.stats.instructions;
-    stats->loads        = sim_cpu.stats.loads;
-    stats->load_misses  = sim_cpu.stats.load_misses;
-    stats->stores       = sim_cpu.stats.stores;
-    stats->store_misses = sim_cpu.stats.store_misses;
+    cpu_fill_stats(&cpu, stats);
 }
 
 dword rsk_reg_get(int index) {
-    cpu_read_register(&sim_cpu, index);
+    cpu_read_register(&cpu, index);
 }
 
 void rsk_reg_set(int index, dword value) {
-    cpu_write_register(&sim_cpu, index, value);
+    cpu_write_register(&cpu, index, value);
 }
 
 dword rsk_pc_get(void) {
-    return sim_cpu.pc;
+    return cpu_get_pc(&cpu);
 }
 
 void rsk_pc_set(dword value) {
-    sim_cpu.pc = value;
+    cpu_set_pc(&cpu, value);
 }
 
 int rsk_cpu_running(void) {
-    return sim_cpu.is_running;
+    return cpu_is_running(&cpu);
 }
 
 void rsk_cpu_signal(rsk_signal_t signal) {
-    if (signal == rs_halt) {
-        sim_cpu.is_running = 0;
-    }
+    cpu_process_signal(&cpu, signal);
 }
 
 int rsk_cpu_run(int cycles) {
 	int count = 0;
 
-	while (cpu_execute(&sim_cpu)) count++;
+	while (cpu_execute(&cpu)) count++;
 	if (count > 0) count++; // include ebreak in count
 	
     return count;
