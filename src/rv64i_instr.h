@@ -11,22 +11,22 @@
 
 // Load upper immediate (lui)
 DISASM_DEF(lui) {
-	return DISASM_FMT("lui x%hhu, %#lx", mask_instr_rd(instr), utype_imm(instr));
+	return DISASM_FMT("lui x%hhu, %#lx", GET_RD, utype_imm(instr));
 }
 
 EXEC_DEF(lui) {
-	WRITE_REG(mask_instr_rd(instr), utype_imm(instr));
+	WRITE_REG(GET_RD, utype_imm(instr));
 }
 
 // TODO: auipc
 
 // Add immediate (addi)
 DISASM_DEF(addi) {
-	return DISASM_FMT("addi x%hhu, x%hhu, %#lx", mask_instr_rd(instr), mask_instr_rs1(instr), itype_imm(instr));
+	return DISASM_FMT("addi x%hhu, x%hhu, %#lx", GET_RD, GET_RS1, itype_imm(instr));
 }
 
 EXEC_DEF(addi) {
-	WRITE_REG(mask_instr_rd(instr), READ_REG(mask_instr_rs1(instr)) + itype_imm(instr));
+	WRITE_REG(GET_RD, READ_REG(GET_RS1) + itype_imm(instr));
 }
 
 // TODO: slti
@@ -34,88 +34,88 @@ EXEC_DEF(addi) {
 
 // XOR immediate (xori)
 DISASM_DEF(xori) {
-	return DISASM_FMT("xori x%hhu, x%hhu, %#lx", mask_instr_rd(instr), mask_instr_rs1(instr), itype_imm(instr));
+	return DISASM_FMT("xori x%hhu, x%hhu, %#lx", GET_RD, GET_RS1, itype_imm(instr));
 }
 
 EXEC_DEF(xori) {
-	WRITE_REG(mask_instr_rd(instr), READ_REG(mask_instr_rs1(instr)) ^ itype_imm(instr));
+	WRITE_REG(GET_RD, READ_REG(GET_RS1) ^ itype_imm(instr));
 }
 
 // OR immediate (ori)
 DISASM_DEF(ori) {
-	return DISASM_FMT("ori x%hhu, x%hhu, %#lx", mask_instr_rd(instr), mask_instr_rs1(instr), itype_imm(instr));
+	return DISASM_FMT("ori x%hhu, x%hhu, %#lx", GET_RD, GET_RS1, itype_imm(instr));
 }
 
 EXEC_DEF(ori) {
-	WRITE_REG(mask_instr_rd(instr), READ_REG(mask_instr_rs1(instr)) | itype_imm(instr));
+	WRITE_REG(GET_RD, READ_REG(GET_RS1) | itype_imm(instr));
 }
 
 // AND immediate (andi)
 DISASM_DEF(andi) {
-	return DISASM_FMT("andi x%hhu, x%hhu, %#lx", mask_instr_rd(instr), mask_instr_rs1(instr), itype_imm(instr));
+	return DISASM_FMT("andi x%hhu, x%hhu, %#lx", GET_RD, GET_RS1, itype_imm(instr));
 }
 
 EXEC_DEF(andi) {
-	WRITE_REG(mask_instr_rd(instr), READ_REG(mask_instr_rs1(instr)) & itype_imm(instr));
+	WRITE_REG(GET_RD, READ_REG(GET_RS1) & itype_imm(instr));
 }
 
 // Immediate logical shift left (slli)
 DISASM_DEF(slli) {
-	return DISASM_FMT("slli x%hhu, x%hhu, %#lx", mask_instr_rd(instr), mask_instr_rs1(instr), itype_imm(instr));
+	return DISASM_FMT("slli x%hhu, x%hhu, %#lx", GET_RD, GET_RS1, itype_imm(instr));
 }
 
 EXEC_DEF(slli) {
-	WRITE_REG(mask_instr_rd(instr), READ_REG(mask_instr_rs1(instr)) >> itype_imm(instr));
+	WRITE_REG(GET_RD, READ_REG(GET_RS1) >> itype_imm(instr));
 }
 
 // Immediate logical right shift (srli)
 DISASM_DEF(srli) {
 	dword imm = (BITSMASK(25, 20) & instr) >> 20;
-	return DISASM_FMT("srli x%hhu, x%hhu, %#lx", mask_instr_rd(instr), mask_instr_rs1(instr), imm);
+	return DISASM_FMT("srli x%hhu, x%hhu, %#lx", GET_RD, GET_RS1, imm);
 }
 
 EXEC_DEF(srli) {
 	dword imm = (BITSMASK(25, 20) & instr) >> 20;
-	WRITE_REG(mask_instr_rd(instr), READ_REG(mask_instr_rs1(instr)) << imm);
+	WRITE_REG(GET_RD, READ_REG(GET_RS1) << imm);
 }
 
 // Immediate arithmetic right shift (srai)
 DISASM_DEF(srai) {
 	// Standard immediate decoding cannot be used here
 	dword imm = (BITSMASK(25, 20) & instr) >> 20;
-	return DISASM_FMT("srai x%hhu, x%hhu, %#lx", mask_instr_rd(instr), mask_instr_rs1(instr), imm);
+	return DISASM_FMT("srai x%hhu, x%hhu, %#lx", GET_RD, GET_RS1, imm);
 }
 
 EXEC_DEF(srai) {
 	dword imm = (BITSMASK(25, 20) & instr) >> 20;
-	WRITE_REG(mask_instr_rd(instr), (sdword) READ_REG(mask_instr_rs1(instr)) >> imm);
+	WRITE_REG(GET_RD, (sdword) READ_REG(GET_RS1) >> imm);
 }
 
 // 64-bit addition (add)
 DISASM_DEF(add) {
-	return DISASM_FMT("add x%hhu, x%hhu, x%hhu", mask_instr_rd(instr), mask_instr_rs1(instr), mask_instr_rs2(instr));
+	return DISASM_FMT("add x%hhu, x%hhu, x%hhu", GET_RD, GET_RS1, GET_RS2);
 }
 
 EXEC_DEF(add) {
-	WRITE_REG(mask_instr_rd(instr), READ_REG(mask_instr_rs1(instr)) + READ_REG(mask_instr_rs2(instr)));
+	WRITE_REG(GET_RD, READ_REG(GET_RS1) + READ_REG(GET_RS2));
 }
 
 // 64-bit subtraction (sub)
 DISASM_DEF(sub) {
-	return DISASM_FMT("sub x%hhu, x%hhu, x%hhu", mask_instr_rd(instr), mask_instr_rs1(instr), mask_instr_rs2(instr));
+	return DISASM_FMT("sub x%hhu, x%hhu, x%hhu", GET_RD, GET_RS1, GET_RS2);
 }
 
 EXEC_DEF(sub) {
-	WRITE_REG(mask_instr_rd(instr), READ_REG(mask_instr_rs1(instr)) - READ_REG(mask_instr_rs2(instr)));
+	WRITE_REG(GET_RD, READ_REG(GET_RS1) - READ_REG(GET_RS2));
 }
 
 // Logical left shift (sll)
 DISASM_DEF(sll) {
-	return DISASM_FMT("sll x%hhu, x%hhu, x%hhu", mask_instr_rd(instr), mask_instr_rs1(instr), mask_instr_rs2(instr));
+	return DISASM_FMT("sll x%hhu, x%hhu, x%hhu", GET_RD, GET_RS1, GET_RS2);
 }
 
 EXEC_DEF(sll) {
-	WRITE_REG(mask_instr_rd(instr), READ_REG(mask_instr_rs1(instr)) << READ_REG(mask_instr_rs2(instr)));
+	WRITE_REG(GET_RD, READ_REG(GET_RS1) << READ_REG(GET_RS2));
 }
 
 // TODO: slt
@@ -124,20 +124,20 @@ EXEC_DEF(sll) {
 
 // Logical right shift (srl)
 DISASM_DEF(srl) {
-	return DISASM_FMT("srl x%hhu, x%hhu, x%hhu", mask_instr_rd(instr), mask_instr_rs1(instr), mask_instr_rs2(instr));
+	return DISASM_FMT("srl x%hhu, x%hhu, x%hhu", GET_RD, GET_RS1, GET_RS2);
 }
 
 EXEC_DEF(srl) {
-	WRITE_REG(mask_instr_rd(instr), READ_REG(mask_instr_rs1(instr)) >> READ_REG(mask_instr_rs2(instr)));
+	WRITE_REG(GET_RD, READ_REG(GET_RS1) >> READ_REG(GET_RS2));
 }
 
 // Arithmetic right shift (sra)
 DISASM_DEF(sra) {
-	return DISASM_FMT("sra x%hhu, x%hhu, x%hhu", mask_instr_rd(instr), mask_instr_rs1(instr), mask_instr_rs2(instr));
+	return DISASM_FMT("sra x%hhu, x%hhu, x%hhu", GET_RD, GET_RS1, GET_RS2);
 }
 
 EXEC_DEF(sra) {
-	WRITE_REG(mask_instr_rd(instr), READ_REG(mask_instr_rs1(instr)) >> (sdword) READ_REG(mask_instr_rs2(instr)));
+	WRITE_REG(GET_RD, READ_REG(GET_RS1) >> (sdword) READ_REG(GET_RS2));
 }
 
 // TODO: or
@@ -153,6 +153,7 @@ EXEC_DEF(sra) {
 // TODO: ecall
 
 // EBREAK
+#define RV64I_EBREAK (FUNCT7(0000000) | RS2(00001) | RS1(00000) | FUNCT3(000) | RD(00000) | OPCODE(1110011))
 DISASM_DEF(ebreak) {
 	return DISASM_FMT("ebreak");
 }
@@ -171,11 +172,11 @@ EXEC_DEF(ebreak) {
 
 // Load 32-bit (lw)
 DISASM_DEF(lw) {
-	return DISASM_FMT("lw x%hhu, %#lx(x%hhu)", mask_instr_rd(instr), itype_imm(instr), mask_instr_rs1(instr));
+	return DISASM_FMT("lw x%hhu, %#lx(x%hhu)", GET_RD, itype_imm(instr), GET_RS1);
 }
 
 EXEC_DEF(lw) {
-	WRITE_REG(mask_instr_rd(instr), READ_REG(mask_instr_rs1(instr)) + itype_imm(instr));
+	WRITE_REG(GET_RD, READ_REG(GET_RS1) + itype_imm(instr));
 }
 
 // TODO: lbu
@@ -185,109 +186,109 @@ EXEC_DEF(lw) {
 
 // Store 32-bit (sw)
 DISASM_DEF(sw) {
-	return DISASM_FMT("sw x%hhu, %#lx(x%hhu)", mask_instr_rs2(instr), stype_imm(instr), mask_instr_rs1(instr));
+	return DISASM_FMT("sw x%hhu, %#lx(x%hhu)", GET_RS2, stype_imm(instr), GET_RS1);
 }
 
 EXEC_DEF(sw) {
-	STORE_WORD(READ_REG(mask_instr_rs1(instr)) + stype_imm(instr), READ_REG(mask_instr_rs2(instr)));
+	STORE_WORD(READ_REG(GET_RS1) + stype_imm(instr), READ_REG(GET_RS2));
 }
 
 // Jump and link (jal)
 DISASM_DEF(jal) {
-    return DISASM_FMT("jal %hhu, %#lx", mask_instr_rd(instr), jtype_imm(instr));
+    return DISASM_FMT("jal %hhu, %#lx", GET_RD, jtype_imm(instr));
 }
 
 EXEC_DEF(jal) {
-    WRITE_REG(mask_instr_rd(instr), GET_PC + 4);
+    WRITE_REG(GET_RD, GET_PC + 4);
     SET_PC(GET_PC + jtype_imm(instr));
 }
 
 // Jump and link register (jalr)
 DISASM_DEF(jalr) {
-    return DISASM_FMT("jalr %hhu, %hhu, %#lx", mask_instr_rd(instr), mask_instr_rs1(instr), itype_imm(instr));
+    return DISASM_FMT("jalr %hhu, %hhu, %#lx", GET_RD, GET_RS1, itype_imm(instr));
 }
 
 EXEC_DEF(jalr) {
     dword t = GET_PC;
-    SET_PC((READ_REG(mask_instr_rs1(instr)) + itype_imm(instr)) & ~1);
-    WRITE_REG(mask_instr_rd(instr), t);    
+    SET_PC((READ_REG(GET_RS1) + itype_imm(instr)) & ~1);
+    WRITE_REG(GET_RD, t);    
 }
 
 // Branch if equal (beq)
 DISASM_DEF(beq) {
-    return DISASM_FMT("beq %hhu, %hhu, %#lx", mask_instr_rs1(instr), mask_instr_rs2(instr), btype_imm(instr));
+    return DISASM_FMT("beq %hhu, %hhu, %#lx", GET_RS1, GET_RS2, btype_imm(instr));
 }
 
 EXEC_DEF(beq) {
-    if (READ_REG(mask_instr_rs1(instr)) == READ_REG(mask_instr_rs2(instr))) {
+    if (READ_REG(GET_RS1) == READ_REG(GET_RS2)) {
         SET_PC(GET_PC + btype_imm(instr));
     }
 }
 
 // Branch if not equal (bne)
 DISASM_DEF(bne) {
-    return DISASM_FMT("bne %hhu, %hhu, %#lx", mask_instr_rs1(instr), mask_instr_rs2(instr), btype_imm(instr));
+    return DISASM_FMT("bne %hhu, %hhu, %#lx", GET_RS1, GET_RS2, btype_imm(instr));
 }
 
 EXEC_DEF(bne) {
-    if (READ_REG(mask_instr_rs1(instr)) != READ_REG(mask_instr_rs2(instr))) {
+    if (READ_REG(GET_RS1) != READ_REG(GET_RS2)) {
         SET_PC(GET_PC + btype_imm(instr));
     }
 }
 
 // Branch if less than (blt)
 DISASM_DEF(blt) {
-    return DISASM_FMT("blt %hhu, %hhu, %#lx", mask_instr_rs1(instr), mask_instr_rs2(instr), btype_imm(instr));
+    return DISASM_FMT("blt %hhu, %hhu, %#lx", GET_RS1, GET_RS2, btype_imm(instr));
 }
 
 EXEC_DEF(blt) {
-    if (READ_REG((sdword) mask_instr_rs1(instr)) < (sdword) READ_REG(mask_instr_rs2(instr))) {
+    if (READ_REG((sdword) GET_RS1) < (sdword) READ_REG(GET_RS2)) {
         SET_PC(GET_PC + btype_imm(instr));
     }
 }
 
 // Branch if greater than or equal (bge)
 DISASM_DEF(bge) {
-    return DISASM_FMT("bge %hhu, %hhu, %#lx", mask_instr_rs1(instr), mask_instr_rs2(instr), btype_imm(instr));
+    return DISASM_FMT("bge %hhu, %hhu, %#lx", GET_RS1, GET_RS2, btype_imm(instr));
 }
 
 EXEC_DEF(bge) {
-    if (READ_REG((sdword) mask_instr_rs1(instr)) >= (sdword) READ_REG(mask_instr_rs2(instr))) {
+    if (READ_REG((sdword) GET_RS1) >= (sdword) READ_REG(GET_RS2)) {
         SET_PC(GET_PC + btype_imm(instr));
     }
 }
 
 // Unsigned branch if less than (bltu)
 DISASM_DEF(bltu) {
-    return DISASM_FMT("bltu %hhu, %hhu, %#lx", mask_instr_rs1(instr), mask_instr_rs2(instr), btype_imm(instr));
+    return DISASM_FMT("bltu %hhu, %hhu, %#lx", GET_RS1, GET_RS2, btype_imm(instr));
 }
 
 EXEC_DEF(bltu) {
-    if (READ_REG((mask_instr_rs1(instr)) < READ_REG(mask_instr_rs2(instr)))) {
+    if (READ_REG((GET_RS1) < READ_REG(GET_RS2))) {
         SET_PC(GET_PC + btype_imm(instr));
     }
 }
 
 // Unsigned branch if greater than or equal (bgeu)
 DISASM_DEF(bgeu) {
-    return DISASM_FMT("bgeu %hhu, %hhu, %#lx", mask_instr_rs1(instr), mask_instr_rs2(instr), btype_imm(instr));
+    return DISASM_FMT("bgeu %hhu, %hhu, %#lx", GET_RS1, GET_RS2, btype_imm(instr));
 }
 
 EXEC_DEF(bgeu) {
-    if (READ_REG(mask_instr_rs1(instr)) >= READ_REG(mask_instr_rs2(instr))) {
+    if (READ_REG(GET_RS1) >= READ_REG(GET_RS2)) {
         SET_PC(GET_PC + btype_imm(instr));
     }
 }
 
-// ---------- Wide RV64I Instructions ----------
+// ---------- Word RV64I Instructions ----------
 
 // Add word immediate (addiw)
 DISASM_DEF(addiw) {
-    return DISASM_FMT("addiw %hhu, %hhu, %#lx", mask_instr_rd(instr), mask_instr_rs1(instr), itype_imm(instr));
+    return DISASM_FMT("addiw %hhu, %hhu, %#lx", GET_RD, GET_RS1, itype_imm(instr));
 }
 
 EXEC_DEF(addiw) {
-    WRITE_REG(mask_instr_rd(instr), (((sdword) READ_REG(mask_instr_rs1(instr)) + itype_imm(instr)) << 32 ) >> 32);
+    WRITE_REG(GET_RD, (((sdword) READ_REG(GET_RS1) + itype_imm(instr)) << 32 ) >> 32);
 }
 
 // TODO: slliw
@@ -302,24 +303,24 @@ EXEC_DEF(addiw) {
 
 // Load dword (ld)
 DISASM_DEF(ld) {
-    return DISASM_FMT("ld %hhu, %#lx(%hhu)", mask_instr_rd(instr), itype_imm(instr), mask_instr_rs1(instr));
+    return DISASM_FMT("ld %hhu, %#lx(%hhu)", GET_RD, itype_imm(instr), GET_RS1);
 }
 
 EXEC_DEF(ld) {
-    WRITE_REG(mask_instr_rd(instr), LOAD_DWORD(READ_REG(mask_instr_rs1(instr) + itype_imm(instr))));
+    WRITE_REG(GET_RD, LOAD_DWORD(READ_REG(GET_RS1 + itype_imm(instr))));
 }
 
 // Store dword (sd)
 DISASM_DEF(sd) {
-    return DISASM_FMT("sd %hhu, %#lx(%hhu)", mask_instr_rs2(instr), stype_imm(instr), mask_instr_rs1(instr));
+    return DISASM_FMT("sd %hhu, %#lx(%hhu)", GET_RS2, stype_imm(instr), GET_RS1);
 }
 
 EXEC_DEF(sd) {
-    STORE_DWORD(READ_REG(mask_instr_rs1(instr)) + stype_imm(instr), READ_REG(mask_instr_rs2(instr)));
+    STORE_DWORD(READ_REG(GET_RS1) + stype_imm(instr), READ_REG(GET_RS2));
 }
 
 // Array of all implemented rv64i instruction types
-riscv_instr_t const rv64i_instructions[] = {
+riscv_instr_t rv64i_instructions[] = {
     // Load upper immediate (lui)
 	{
 		.mask =    INSTR_OPCODE,

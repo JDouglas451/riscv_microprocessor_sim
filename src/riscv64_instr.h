@@ -7,6 +7,7 @@
 
 // Simulator data structures and typedefs
 #include "riscv_config.h"
+#include "riscv64_cpu.h"
 
 // ---------- RISC-V Instruction Definitions ----------
 
@@ -19,10 +20,10 @@ typedef struct riscv64_instruction_type {
 	dword required_bits;
 
 	// Disassemble an instruction of this type, putting the result into the provided string buffer. Returns the length of the complete disassembled instruction. If the buffer is not large enough to hold the instruction, the resulting string will be terminated early.
-	size_t (*disassemble)(dword instruction, void (*panic)(const char *msg), char* buffer, size_t buffer_size);
+	size_t (*disassemble)(riscv_cpu_t* const cpu, dword instr, char* buffer, size_t buffer_size);
 
-	// Execute an instruction of this type
-	void (*execute)(dword instruction, void (*panic)(const char *msg), riscv64_cpu* const cpu);
+	// Execute an instruction of this type and return 1 if pc was changed (zero otherwise)
+	void (*execute)(riscv_cpu_t* const cpu, dword instr, int* updated_pc);
 } riscv_instr_t;
 
 // A set of potentially many lists of instruction types
@@ -71,31 +72,6 @@ riscv_instr_t* registry_search(const riscv_registry_t* const registry, dword ins
 
     return NULL;
 }
-
-// ---------- Disassembly/Execution Function Names ----------
-
-#define DISASM_DEF(name) size_t _disasm_##name(dword instr, void (*panic)(const char *msg), char* buffer, size_t buffer_size)
-#define EXEC_DEF(name)   void _exec_##name(dword instr, void (*panic)(const char *msg), riscv64_cpu* const cpu)
-
-#define READ_REG(index)         cpu_read_register(cpu, index)
-#define WRITE_REG(index, value) cpu_write_register(cpu, index, value)
-
-#define GET_PC       cpu->pc
-#define SET_PC(addr) cpu->pc = addr
-
-#define STORE_BYTE(addr, value)  cpu->host.mem_store_byte(addr, value)
-#define STORE_HWORD(addr, value) cpu->host.mem_store_hword(addr, value)
-#define STORE_WORD(addr, value)  cpu->host.mem_store_word(addr, value)
-#define STORE_DWORD(addr, value) cpu->host.mem_store_dword(addr, value)
-
-#define LOAD_BYTE(addr)  cpu->host.mem_load_byte(addr)
-#define LOAD_HWORD(addr) cpu->host.mem_load_hword(addr)
-#define LOAD_WORD(addr)  cpu->host.mem_load_word(addr)
-#define LOAD_DWORD(addr) cpu->host.mem_load_dword(addr)
-
-#define DISASM_FMT(format, ...) snprintf(buffer, buffer_size, format __VA_OPT__(, ) __VA_ARGS__)
-
-#define INSTR_LINKS(name) .disassemble = _disasm_##name##, .execute = _exec_##name
 
 // ---------- Preprocessor Bit Mask Construction ----------
 
@@ -202,5 +178,37 @@ static inline dword unsigned_jtype_imm(dword instr) {
 static inline sdword jtype_imm(dword instr) {
 	return (((sdword) unsigned_jtype_imm(instr)) << 43) >> 43;
 }
+
+// ---------- Disassembly/Execution Function Names ----------
+
+#define DISASM_DEF(name) size_t _disasm_##name(riscv_cpu_t* const cpu, dword instr, char* buffer, size_t buffer_size)
+#define EXEC_DEF(name)   void _exec_##name(riscv_cpu_t* const cpu, dword instr, int* updated_pc)
+
+#define DISASM_FMT(format, ...) snprintf(buffer, buffer_size, format __VA_OPT__(, ) __VA_ARGS__)
+
+#define INSTR_LINKS(name) .disassemble = _disasm_##name##, .execute = _exec_##name
+
+#define READ_REG(index)         cpu_read_register(cpu, index)
+#define WRITE_REG(index, value) cpu_write_register(cpu, index, value)
+
+#define GET_PC       cpu->pc
+#define SET_PC(addr) *updated_pc = 1; cpu->pc = addr
+
+#define GET_FUNCT7 mask_instr_funct7(instr)
+#define GET_RS2    mask_instr_rs2(instr)
+#define GET_RS1    mask_instr_rs1(instr)
+#define GET_FUNCT3 mask_instr_funct3(instr)
+#define GET_RD     mask_instr_rd(instr)
+#define GET_OPCODE mask_instr_opcode(instr)
+
+#define STORE_BYTE(addr, value)  cpu->host.mem_store_byte(addr, value)
+#define STORE_HWORD(addr, value) cpu->host.mem_store_hword(addr, value)
+#define STORE_WORD(addr, value)  cpu->host.mem_store_word(addr, value)
+#define STORE_DWORD(addr, value) cpu->host.mem_store_dword(addr, value)
+
+#define LOAD_BYTE(addr)  cpu->host.mem_load_byte(addr)
+#define LOAD_HWORD(addr) cpu->host.mem_load_hword(addr)
+#define LOAD_WORD(addr)  cpu->host.mem_load_word(addr)
+#define LOAD_DWORD(addr) cpu->host.mem_load_dword(addr)
 
 #endif

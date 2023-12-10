@@ -9,8 +9,9 @@
 #include "riscv_config.h"
 #include "riscv64_instr.h"
 
-// RV64I Base Integer Instruction Set
+// rv64im
 #include "rv64i_instr.h"
+#include "rv64m_instr.h"
 
 // ---------- CPU Constants (for verbosity) ----------
 
@@ -67,8 +68,10 @@ void cpu_init(riscv_cpu_t* cpu, const rsk_host_services_t* const services) {
 	cpu->stats.stores       = 0;
 	cpu->stats.store_misses = 0;
 
+	// rv64i
 	registry_append(&cpu->instruction_set, rv64i_size, rv64i_instructions);
-	// TODO: register instructions
+	// rv64m
+	registry_append(&cpu->instruction_set, rv64m_size, rv64m_instructions);
 
 	cpu->pc = 0;
 	for (int i = 0; i < REGISTER_COUNT; i++) cpu->x[i] = 0;
@@ -88,6 +91,56 @@ void cpu_write_register(const riscv_cpu_t* const cpu, int index, dword value) {
 
 	if (0 == index) return;
 	cpu->x[index] == value;
+}
+
+// Disassemble the current instruction
+void cpu_disassemble(const riscv_cpu_t* const cpu, char* buffer, size_t buffer_size) {
+	// TODO: fix extreme and potentially inaccurate solution to buffer validation
+	if (buffer_size < 32) return;
+
+	char* bp = buffer;
+	size_t bps = buffer_size;
+
+	// get current instruction an add to disasm buffer
+	dword instr = cpu->host.mem_load_dword(cpu->pc);
+	int len = snprintf(bp, bps, "%#.8lx   ");
+	bp += 13;
+	bps -= 13;
+
+	// get the instruction type
+	riscv_instr_t* itype = registry_search(&cpu->instruction_set, instr);
+	if (NULL == itype) {
+		bp[0] = '?';
+		bp[1] = '\0';
+	}
+
+	// disassemble instruction
+	len = itype->disassemble(cpu, instr, bp, bps);
+}
+
+// Execute the instruction at pc and return 0 if ebreak was hit
+int cpu_execute(riscv_cpu_t* const cpu) {
+	cpu->is_running = 1;
+
+	// get current instruction an add to disasm buffer
+	dword instr = cpu->host.mem_load_dword(cpu->pc);
+	if (instr == RV64I_EBREAK) {
+		cpu->is_running = 0;
+		return 0;
+	}
+
+	// get the instruction type
+	riscv_instr_t* itype = registry_search(&cpu->instruction_set, instr);
+	if (NULL == itype) {
+		cpu->host.panic("Unrecognized instruction!");
+		return;
+	}
+
+	int updated_pc = 0;
+	itype->execute(cpu, instr, &updated_pc);
+	if (!updated_pc) cpu->pc += 4;
+
+	return 1;
 }
 
 #endif

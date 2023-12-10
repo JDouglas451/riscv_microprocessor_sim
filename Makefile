@@ -16,7 +16,7 @@ debug:
 	gcc $(CDEBUG) -shared -o $(WORKDIR)librsk.so $(WORKDIR)rskapi.o
 
 tests:
-	@echo "No tests"
+	@echo "No tests\n"
 
 # Run rsh.py
 run:
