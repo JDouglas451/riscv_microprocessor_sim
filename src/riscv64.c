@@ -247,7 +247,18 @@ typedef struct riscv64_cpu {
 
 // ---------- CPU Methods ----------
 
-void cpu_init(riscv_cpu_t* cpu, const rsk_host_services_t* const services) {
+riscv_cpu_t* cpu_init(riscv_cpu_t* cpu, const rsk_host_services_t* const services) {
+    if (NULL == cpu) {
+        // TODO: where should this be freed?
+        cpu = (riscv_cpu_t*) calloc(1, sizeof(riscv_cpu_t));
+
+        // malloc failure
+        if (NULL == cpu) {
+            services->panic("Malloc failure during CPU initialization");
+            return NULL;
+        }
+    }
+
     cpu->is_running = 0;
 	cpu->config = rc_nothing;
 
@@ -277,94 +288,124 @@ void cpu_init(riscv_cpu_t* cpu, const rsk_host_services_t* const services) {
 
 	cpu->pc = 0;
 	for (int i = 0; i < REGISTER_COUNT; i++) cpu->x[i] = 0;
+
+    return cpu;
 }
 
 int cpu_is_running(const riscv_cpu_t* const cpu) {
+    if (NULL == cpu) return 0;
     return cpu->is_running;
 }
 
 rsk_config_t cpu_get_config(const riscv_cpu_t* const cpu) {
+    if (NULL == cpu) return rc_nothing;
     return cpu->config;
 }
 
 void cpu_set_config(riscv_cpu_t* const cpu, rsk_config_t config) {
+    if (NULL == cpu) return;
     cpu->config = config;
 }
 
 byte cpu_load_byte(const riscv_cpu_t* const cpu, dword address) {
+    if (NULL == cpu) return 0;
     return cpu->host.mem_load_byte(address);
 }
 
 void cpu_store_byte(const riscv_cpu_t* const cpu, dword address, byte value) {
+    if (NULL == cpu) return;
     cpu->host.mem_store_byte(address, value);
 }
 
 hword cpu_load_hword(const riscv_cpu_t* const cpu, dword address) {
+    if (NULL == cpu) return 0;
     return cpu->host.mem_load_hword(address);
 }
 
 void cpu_store_hword(const riscv_cpu_t* const cpu, dword address, hword value) {
+    if (NULL == cpu) return;
     cpu->host.mem_store_hword(address, value);
 }
 
 word cpu_load_word(const riscv_cpu_t* const cpu, dword address) {
+    if (NULL == cpu) return 0;
     return cpu->host.mem_load_word(address);
 }
 
 void cpu_store_word(const riscv_cpu_t* const cpu, dword address, word value) {
+    if (NULL == cpu) return;
     cpu->host.mem_store_word(address, value);
 }
 
 dword cpu_load_dword(const riscv_cpu_t* const cpu, dword address) {
+    if (NULL == cpu) return 0;
     return cpu->host.mem_load_dword(address);
 }
 
 void cpu_store_dword(const riscv_cpu_t* const cpu, dword address, dword value) {
+    if (NULL == cpu) return;
     cpu->host.mem_store_dword(address, value);
 }
 
 dword cpu_get_pc(const riscv_cpu_t* const cpu) {
+    if (NULL == cpu) return 0;
     return cpu->pc;
 }
 
 void cpu_set_pc(riscv_cpu_t* const cpu, dword address) {
+    if (NULL == cpu) return;
     cpu->pc = address;
 }
 
 dword cpu_read_register(const riscv_cpu_t* const cpu, byte index) {
-	if (0 > index || index >= REGISTER_COUNT) cpu->host.panic("Register access out of bounds");
+    if (NULL == cpu) return 0;
+
+	if (0 > index || index >= REGISTER_COUNT) {
+        cpu->host.panic("Register access out of bounds");
+        return 0;
+    }
 
 	if (0 == index) return 0;
 	return cpu->x[index];
 }
 
 void cpu_write_register(riscv_cpu_t* const cpu, byte index, dword value) {
-	if (0 > index || index >= REGISTER_COUNT) cpu->host.panic("Register access out of bounds");
+    if (NULL == cpu) return;
+
+	if (0 > index || index >= REGISTER_COUNT) {
+        cpu->host.panic("Register access out of bounds");
+        return;
+    }
 
 	if (0 == index) return;
 	cpu->x[index] = value;
 }
 
 void cpu_process_signal(riscv_cpu_t* const cpu, rsk_signal_t signal) {
+    if (NULL == cpu) return;
+
     if (signal == rs_halt) {
         cpu->is_running = 0;
     }
 }
 
 void cpu_log_trace(riscv_cpu_t* const cpu) {
+    if (NULL == cpu) return;
     cpu->host.log_trace(cpu->stats.instructions, cpu->pc, cpu->x);
 }
 
 void cpu_log_message(const riscv_cpu_t* cpu, const char* const message) {
+    if (NULL == cpu) return;
     cpu->host.log_msg(message);
 }
 
 void cpu_panic(const riscv_cpu_t* const cpu, const char* message) {
+    if (NULL == cpu) return;
     cpu->host.panic(message);
 }
 
 void cpu_fill_stats(const riscv_cpu_t* const cpu, rsk_stat_t* stats) {
-    if (NULL == stats) return;
+    if (NULL == cpu || NULL == stats) return;
 
     stats->instructions = cpu->stats.instructions;
     stats->loads = cpu->stats.loads;
@@ -374,6 +415,8 @@ void cpu_fill_stats(const riscv_cpu_t* const cpu, rsk_stat_t* stats) {
 }
 
 void cpu_disassemble(riscv_cpu_t* const cpu, char* buffer, size_t buffer_size) {
+    if (NULL == cpu) return;
+
 	// TODO: fix extreme and potentially inaccurate solution to buffer validation
 	if (buffer_size < 32) return;
 
@@ -397,8 +440,8 @@ void cpu_disassemble(riscv_cpu_t* const cpu, char* buffer, size_t buffer_size) {
 	itype->disassemble(cpu, instr, bp, bps);
 }
 
-// Execute the instruction at pc and return 0 if ebreak was hit
 int cpu_execute(riscv_cpu_t* const cpu) {
+    if (NULL == cpu) return 0;
 	cpu->is_running = 1;
 
 	// get current instruction an add to disasm buffer

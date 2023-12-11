@@ -629,7 +629,7 @@ class RISCVSimShell:
 
     # TODO: Test log trace
     # Used to cache previous register values for log_trace()
-    self.register_history = [0 for i in range(32)]
+    register_history = [0 for i in range(32)]
 
     def log_trace(self, step : int, pc : int, *gprs) -> None:
         if self._tlog:

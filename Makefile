@@ -6,7 +6,7 @@ CFLAGS = -DNDEBUG
 
 librsk.so: riscv64.o
 	gcc $(CFLAGS) -fPIC -c -o $(WORKDIR)rskapi.o $(SRCDIR)rsk.c
-	gcc $(CDEBUG) -shared -o $(WORKDIR)librsk.so $(WORKDIR)rskapi.o
+	gcc $(CDEBUG) -shared -o $(WORKDIR)librsk.so $(WORKDIR)rskapi.o $(WORKDIR)riscv64.o
 
 riscv64.o:
 	gcc $(CFLAGS) -fPIC -c -o $(WORKDIR)riscv64.o $(SRCDIR)riscv64.c
