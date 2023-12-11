@@ -23,6 +23,7 @@ const char* const riscv_sim_info[] = {
     NULL
 };
 
+typedef struct riscv64_cpu riscv_cpu_t;
 riscv_cpu_t cpu;
 
 // ---------- API Function Definitions ----------
@@ -53,7 +54,7 @@ void rsk_stats_report(rsk_stat_t* stats) {
 }
 
 dword rsk_reg_get(int index) {
-    cpu_read_register(&cpu, index);
+    return cpu_read_register(&cpu, index);
 }
 
 void rsk_reg_set(int index, dword value) {

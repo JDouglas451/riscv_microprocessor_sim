@@ -157,16 +157,16 @@ dword cpu_get_pc(const riscv_cpu_t* const cpu);
 void cpu_set_pc(riscv_cpu_t* const cpu, dword address);
 
 // Safely access a register value. Calls the host service 'panic' if an illegal access occurs.
-dword cpu_read_register(const riscv_cpu_t* const cpu, int index);
+dword cpu_read_register(const riscv_cpu_t* const cpu, byte index);
 
 // Safely write a value to a register. Calls the host service 'panic' if an illegal access occurs.
-void cpu_write_register(const riscv_cpu_t* const cpu, int index, dword value);
+void cpu_write_register(riscv_cpu_t* const cpu, byte index, dword value);
 
 // Have the CPU process a RISC-V signal
 void cpu_process_signal(riscv_cpu_t* const cpu, rsk_signal_t signal);
 
 // Have the CPU report the current state of the CPU to the host
-void cpu_log_trace(const riscv_cpu_t* const cpu);
+void cpu_log_trace(riscv_cpu_t* const cpu);
 
 // Have the CPU log a message with the host
 void cpu_log_message(const riscv_cpu_t* cpu, const char* const message);
@@ -178,7 +178,7 @@ void cpu_panic(const riscv_cpu_t* const cpu, const char* message);
 void cpu_fill_stats(const riscv_cpu_t* const cpu, rsk_stat_t* stats);
 
 // Disassemble the current instruction
-void cpu_disassemble(const riscv_cpu_t* const cpu, char* buffer, size_t buffer_size);
+void cpu_disassemble(riscv_cpu_t* const cpu, char* buffer, size_t buffer_size);
 
 // Execute the instruction at pc and return 0 if ebreak was hit
 int cpu_execute(riscv_cpu_t* const cpu);

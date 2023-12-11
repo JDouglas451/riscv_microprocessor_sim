@@ -176,18 +176,12 @@ static inline sdword jtype_imm(dword instr) {
 
 // ---------- Disassembly/Execution Function Names ----------
 
-#define DISASM_DEF(name) size_t _disasm_##name(riscv_cpu_t* const cpu, dword instr, char* buffer, size_t buffer_size)
-#define EXEC_DEF(name)   void _exec_##name(riscv_cpu_t* const cpu, dword instr, int* updated_pc)
+#define DISASM_DEF(name) size_t z_disasm_##name(riscv_cpu_t* const cpu, dword instr, char* buffer, size_t buffer_size)
+#define EXEC_DEF(name)   void z_exec_##name(riscv_cpu_t* const cpu, dword instr, int* updated_pc)
 
 #define DISASM_FMT(format, ...) snprintf(buffer, buffer_size, format __VA_OPT__(, ) __VA_ARGS__)
 
-#define INSTR_LINKS(name) .disassemble = _disasm_##name##, .execute = _exec_##name
-
-#define READ_REG(index)         cpu_read_register(cpu, index)
-#define WRITE_REG(index, value) cpu_write_register(cpu, index, value)
-
-#define GET_PC       cpu->pc
-#define SET_PC(addr) *updated_pc = 1; cpu->pc = addr
+#define INSTR_LINKS(name) .disassemble = z_disasm_##name , .execute = z_exec_##name
 
 #define GET_FUNCT7 mask_instr_funct7(instr)
 #define GET_RS2    mask_instr_rs2(instr)
@@ -196,25 +190,31 @@ static inline sdword jtype_imm(dword instr) {
 #define GET_RD     mask_instr_rd(instr)
 #define GET_OPCODE mask_instr_opcode(instr)
 
-#define STORE_BYTE(addr, value)  cpu->host.mem_store_byte(addr, value)
-#define STORE_HWORD(addr, value) cpu->host.mem_store_hword(addr, value)
-#define STORE_WORD(addr, value)  cpu->host.mem_store_word(addr, value)
-#define STORE_DWORD(addr, value) cpu->host.mem_store_dword(addr, value)
+#define READ_REG(index)         cpu_read_register(cpu, index)
+#define WRITE_REG(index, value) cpu_write_register(cpu, index, value)
 
-#define LOAD_BYTE(addr)  cpu->host.mem_load_byte(addr)
-#define LOAD_HWORD(addr) cpu->host.mem_load_hword(addr)
-#define LOAD_WORD(addr)  cpu->host.mem_load_word(addr)
-#define LOAD_DWORD(addr) cpu->host.mem_load_dword(addr)
+#define GET_PC       cpu_get_pc(cpu)
+#define SET_PC(addr) *updated_pc = 1; cpu_set_pc(cpu, addr)
+
+#define STORE_BYTE(addr, value)  cpu_store_byte(cpu, addr, value)
+#define STORE_HWORD(addr, value) cpu_store_hword(cpu, addr, value)
+#define STORE_WORD(addr, value)  cpu_store_word(cpu, addr, value)
+#define STORE_DWORD(addr, value) cpu_store_dword(cpu, addr, value)
+
+#define LOAD_BYTE(addr)  cpu_load_byte(cpu, addr)
+#define LOAD_HWORD(addr) cpu_load_hword(cpu, addr)
+#define LOAD_WORD(addr)  cpu_load_word(cpu, addr)
+#define LOAD_DWORD(addr) cpu_load_dword(cpu, addr)
 
 // ---------- Instruction Set Headers ----------
 
 #include "rv64i_instr.h"
 extern const size_t rv64i_size;
-extern riscv_instr_t* rv64i_instructions;
+extern riscv_instr_t rv64i_instructions[];
 
 #include "rv64m_instr.h"
 extern const size_t rv64m_size;
-extern riscv_instr_t* rv64m_instructions;
+extern riscv_instr_t rv64m_instructions[];
 
 // ---------- CPU Constants (for verbosity) ----------
 
@@ -331,18 +331,18 @@ void cpu_set_pc(riscv_cpu_t* const cpu, dword address) {
     cpu->pc = address;
 }
 
-dword cpu_read_register(const riscv_cpu_t* const cpu, int index) {
+dword cpu_read_register(const riscv_cpu_t* const cpu, byte index) {
 	if (0 > index || index >= REGISTER_COUNT) cpu->host.panic("Register access out of bounds");
 
 	if (0 == index) return 0;
 	return cpu->x[index];
 }
 
-void cpu_write_register(const riscv_cpu_t* const cpu, int index, dword value) {
+void cpu_write_register(riscv_cpu_t* const cpu, byte index, dword value) {
 	if (0 > index || index >= REGISTER_COUNT) cpu->host.panic("Register access out of bounds");
 
 	if (0 == index) return;
-	cpu->x[index] == value;
+	cpu->x[index] = value;
 }
 
 void cpu_process_signal(riscv_cpu_t* const cpu, rsk_signal_t signal) {
@@ -351,7 +351,7 @@ void cpu_process_signal(riscv_cpu_t* const cpu, rsk_signal_t signal) {
     }
 }
 
-void cpu_log_trace(const riscv_cpu_t* const cpu) {
+void cpu_log_trace(riscv_cpu_t* const cpu) {
     cpu->host.log_trace(cpu->stats.instructions, cpu->pc, cpu->x);
 }
 
@@ -373,7 +373,7 @@ void cpu_fill_stats(const riscv_cpu_t* const cpu, rsk_stat_t* stats) {
     stats->store_misses = cpu->stats.store_misses;
 }
 
-void cpu_disassemble(const riscv_cpu_t* const cpu, char* buffer, size_t buffer_size) {
+void cpu_disassemble(riscv_cpu_t* const cpu, char* buffer, size_t buffer_size) {
 	// TODO: fix extreme and potentially inaccurate solution to buffer validation
 	if (buffer_size < 32) return;
 
@@ -382,7 +382,7 @@ void cpu_disassemble(const riscv_cpu_t* const cpu, char* buffer, size_t buffer_s
 
 	// get current instruction an add to disasm buffer
 	dword instr = cpu->host.mem_load_dword(cpu->pc);
-	int len = snprintf(bp, bps, "%#.8lx   ");
+	snprintf(bp, bps, "%#.8lx   ", instr);
 	bp += 13;
 	bps -= 13;
 
@@ -394,7 +394,7 @@ void cpu_disassemble(const riscv_cpu_t* const cpu, char* buffer, size_t buffer_s
 	}
 
 	// disassemble instruction
-	len = itype->disassemble(cpu, instr, bp, bps);
+	itype->disassemble(cpu, instr, bp, bps);
 }
 
 // Execute the instruction at pc and return 0 if ebreak was hit
@@ -412,7 +412,8 @@ int cpu_execute(riscv_cpu_t* const cpu) {
 	riscv_instr_t* itype = registry_search(&cpu->instruction_set, instr);
 	if (NULL == itype) {
 		cpu->host.panic("Unrecognized instruction!");
-		return;
+        cpu->is_running = 0;
+		return 0;
 	}
 
 	int updated_pc = 0;
