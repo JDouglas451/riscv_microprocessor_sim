@@ -321,6 +321,7 @@ EXEC_DEF(sd) {
 riscv_instr_t rv64i_instructions[] = {
     // Load upper immediate (lui)
 	{
+		.name = "lui",
 		.mask =    INSTR_OPCODE,
 		.required_bits = OPCODE(0110111),
 		INSTR_LINKS(lui)
@@ -328,6 +329,7 @@ riscv_instr_t rv64i_instructions[] = {
 
 	// Add immediate (addi)
 	{
+		.name = "addi",
 		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
 		.required_bits = OPCODE(0010011) | FUNCT3(000),
 		INSTR_LINKS(addi)
@@ -335,6 +337,7 @@ riscv_instr_t rv64i_instructions[] = {
 
 	// Add immediate (xori)
 	{
+		.name = "xori",
 		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
 		.required_bits = OPCODE(0010011) | FUNCT3(100),
 		INSTR_LINKS(addi)
@@ -342,6 +345,7 @@ riscv_instr_t rv64i_instructions[] = {
 
 	// Or immediate (ori)
 	{
+		.name = "ori",
 		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
 		.required_bits = OPCODE(0010011) | FUNCT3(110),
 		INSTR_LINKS(ori)
@@ -349,6 +353,7 @@ riscv_instr_t rv64i_instructions[] = {
 
 	// And immediate (andi)
 	{
+		.name = "andi",
 		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
 		.required_bits = OPCODE(0010011) | FUNCT3(111),
 		INSTR_LINKS(andi)
@@ -356,6 +361,7 @@ riscv_instr_t rv64i_instructions[] = {
 
 	// Logical left shift by immediate (slli)
 	{
+		.name = "slli",
 		.mask =    INSTR_OPCODE |    INSTR_FUNCT3 | BITSMASK(31, 26), // Only the top 6 bits of FUNCT7
 		.required_bits = OPCODE(0010011) | FUNCT3(001) | FUNCT7(0000000),
 		INSTR_LINKS(slli)
@@ -363,6 +369,7 @@ riscv_instr_t rv64i_instructions[] = {
 
 	// Logical right shift by immediate (srli)
 	{
+		.name = "srli",
 		.mask =    INSTR_OPCODE |    INSTR_FUNCT3 | BITSMASK(31, 26), // Only the top 6 bits of FUNCT7
 		.required_bits = OPCODE(0010011) | FUNCT3(101) | FUNCT7(0000000),
 		INSTR_LINKS(srli)
@@ -370,6 +377,7 @@ riscv_instr_t rv64i_instructions[] = {
 
 	// Arithmetic right shift by immediate (srai)
 	{
+		.name = "srai",
 		.mask =    INSTR_OPCODE |    INSTR_FUNCT3 | BITSMASK(31, 26), // Only the top 6 bits of FUNCT7
 		.required_bits = OPCODE(0010011) | FUNCT3(101) | FUNCT7(0100000),
 		INSTR_LINKS(srai)
@@ -377,6 +385,7 @@ riscv_instr_t rv64i_instructions[] = {
 
 	// 64-bit addition (add)
 	{
+		.name = "add",
 		.mask =    INSTR_OPCODE |    INSTR_FUNCT3 | INSTR_FUNCT7,
 		.required_bits = OPCODE(0110011) | FUNCT3(000) |  FUNCT7(0000000),
 		INSTR_LINKS(add)
@@ -384,6 +393,7 @@ riscv_instr_t rv64i_instructions[] = {
 
 	// 64-bit subtraction (sub)
 	{
+		.name = "sub",
 		.mask =    INSTR_OPCODE |    INSTR_FUNCT3 | INSTR_FUNCT7,
 		.required_bits = OPCODE(0110011) | FUNCT3(000) |  FUNCT7(0100000),
 		INSTR_LINKS(sub)
@@ -391,6 +401,7 @@ riscv_instr_t rv64i_instructions[] = {
 
 	// Logical left shift (sll)
 	{
+		.name = "sll",
 		.mask =    INSTR_OPCODE |    INSTR_FUNCT3 | INSTR_FUNCT7,
 		.required_bits = OPCODE(0110011) | FUNCT3(001) |  FUNCT7(0000000),
 		INSTR_LINKS(sub)
@@ -398,6 +409,7 @@ riscv_instr_t rv64i_instructions[] = {
 
 	// Logical right shift (srl)
 	{
+		.name = "srl",
 		.mask =    INSTR_OPCODE |    INSTR_FUNCT3 | INSTR_FUNCT7,
 		.required_bits = OPCODE(0110011) | FUNCT3(101) |  FUNCT7(0000000),
 		INSTR_LINKS(srl)
@@ -405,6 +417,7 @@ riscv_instr_t rv64i_instructions[] = {
 
 	// Arithmetic right shift (sra)
 	{
+		.name = "sra",
 		.mask =    INSTR_OPCODE |    INSTR_FUNCT3 | INSTR_FUNCT7,
 		.required_bits = OPCODE(0110011) | FUNCT3(101) |  FUNCT7(0100000),
 		INSTR_LINKS(sra)
@@ -412,6 +425,7 @@ riscv_instr_t rv64i_instructions[] = {
 
 	// EBREAK
 	{
+		.name = "ebreak",
 		.mask =    INSTR_OPCODE |    INSTR_RD |  INSTR_FUNCT3 | INSTR_RS1 |  INSTR_RS2 |  INSTR_FUNCT7,
 		.required_bits = OPCODE(1110011) | RD(00000) | FUNCT3(000) |  RS1(00000) | RS2(00001) | FUNCT7(0000000),
 		INSTR_LINKS(ebreak)
@@ -419,84 +433,96 @@ riscv_instr_t rv64i_instructions[] = {
 
 	// Store 32-bit (sw)
 	{
+		.name = "sw",
 		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
 		.required_bits = OPCODE(0100011) | FUNCT3(010),
 		INSTR_LINKS(sw)
 	},
 
     // Jump and link (jal)
-    {
-        .mask =    INSTR_OPCODE,
+	{
+		.name = "jal",
+		.mask =    INSTR_OPCODE,
         .required_bits = OPCODE(1101111),
         INSTR_LINKS(jal)
     },
 
     // Jump and link register (jalr)
-    {
-        .mask =    INSTR_OPCODE |    INSTR_FUNCT3,
+	{
+		.name = "jalr",
+		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
         .required_bits = OPCODE(1100111) | FUNCT3(000),
         INSTR_LINKS(jalr)
     },
 
     // Branch if equal (beq)
-    {
-        .mask =    INSTR_OPCODE |    INSTR_FUNCT3,
+	{
+		.name = "beq",
+		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
         .required_bits = OPCODE(1100011) | FUNCT3(000),
         INSTR_LINKS(beq)
     },
 
     // Branch if not equal (bne)
-    {
-        .mask =    INSTR_OPCODE |    INSTR_FUNCT3,
+	{
+		.name = "bne",
+		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
         .required_bits = OPCODE(1100011) | FUNCT3(001),
         INSTR_LINKS(bne)
     },
 
     // Branch if less than (blt)
-    {
-        .mask =    INSTR_OPCODE |    INSTR_FUNCT3,
+	{
+		.name = "blt",
+		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
         .required_bits = OPCODE(1100011) | FUNCT3(100),
         INSTR_LINKS(blt)
     },
 
     // Branch if greater than or equal (bge)
-    {
-        .mask =    INSTR_OPCODE |    INSTR_FUNCT3,
+	{
+		.name = "bge",
+		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
         .required_bits = OPCODE(1100011) | FUNCT3(101),
         INSTR_LINKS(bge)
     },
 
     // Branch if less than (bltu)
-    {
-        .mask =    INSTR_OPCODE |    INSTR_FUNCT3,
+	{
+		.name = "bltu",
+		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
         .required_bits = OPCODE(1100011) | FUNCT3(110),
         INSTR_LINKS(bltu)
     },
 
     // Branch if greater than or equal (bgeu)
-    {
-        .mask =    INSTR_OPCODE |    INSTR_FUNCT3,
+	{
+		.name = "bgeu",
+		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
         .required_bits = OPCODE(1100011) | FUNCT3(111),
         INSTR_LINKS(bgeu)
     },
 
     // Add word immediate (addiw)
-    {
-        .mask =    INSTR_OPCODE |    INSTR_FUNCT3,
+	{
+		.name = "addiw",
+		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
         .required_bits = OPCODE(0011011) | FUNCT3(000),
         INSTR_LINKS(addiw)
     },
 
     // Load dword (ld)
-    {
-        .mask =    INSTR_OPCODE |    INSTR_FUNCT3,
+	{
+		.name = "ld",
+		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
         .required_bits = OPCODE(0000000) | FUNCT3(011),
         INSTR_LINKS(ld)
     },
 
     // Store dword (sd)
-    {
-        .mask =    INSTR_OPCODE |    INSTR_FUNCT3,
+	{
+		.name = "sd",
+		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
         .required_bits = OPCODE(0100011) | FUNCT3(011),
         INSTR_LINKS(sd)
     },

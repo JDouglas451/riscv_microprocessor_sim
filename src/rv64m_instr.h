@@ -34,6 +34,7 @@ EXEC_DEF(mul) {
 riscv_instr_t rv64m_instructions[] = {
     // Multiply (mul)
     {
+        .name = "mul",
         .mask = INSTR_OPCODE | INSTR_FUNCT3 | INSTR_FUNCT7,
         .required_bits = OPCODE(0110011) | FUNCT3(000) | FUNCT7(0000001),
         INSTR_LINKS(mul)

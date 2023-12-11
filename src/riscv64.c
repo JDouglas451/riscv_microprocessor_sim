@@ -8,11 +8,14 @@
 
 // A RISC-V instruction type; used for decoding, disassembly, and execution
 typedef struct riscv64_instruction_type {
+    // The name of this instruction type
+    const char* const name;
+
 	// Mask of the required fields for this instruction type
-	dword mask;
+	const dword mask;
 
 	// Required bits within the mask for this instruction type
-	dword required_bits;
+	const dword required_bits;
 
 	// Disassemble an instruction of this type, putting the result into the provided string buffer. Returns the length of the complete disassembled instruction. If the buffer is not large enough to hold the instruction, the resulting string will be terminated early.
 	size_t (*disassemble)(riscv_cpu_t* const cpu, dword instr, char* buffer, size_t buffer_size);
@@ -414,7 +417,7 @@ void cpu_fill_stats(const riscv_cpu_t* const cpu, rsk_stat_t* stats) {
     stats->store_misses = cpu->stats.store_misses;
 }
 
-void cpu_disassemble(riscv_cpu_t* const cpu, char* buffer, size_t buffer_size) {
+void cpu_disassemble_instr(riscv_cpu_t* const cpu, char* buffer, size_t buffer_size, dword instr) {
     if (NULL == cpu) return;
 
 	// TODO: fix extreme and potentially inaccurate solution to buffer validation
@@ -422,9 +425,6 @@ void cpu_disassemble(riscv_cpu_t* const cpu, char* buffer, size_t buffer_size) {
 
 	char* bp = buffer;
 	size_t bps = buffer_size;
-
-	// get current instruction an add to disasm buffer
-	dword instr = cpu->host.mem_load_dword(cpu->pc);
 	snprintf(bp, bps, "%#.8lx   ", instr);
 	bp += 13;
 	bps -= 13;
@@ -438,6 +438,13 @@ void cpu_disassemble(riscv_cpu_t* const cpu, char* buffer, size_t buffer_size) {
 
 	// disassemble instruction
 	itype->disassemble(cpu, instr, bp, bps);
+}
+
+void cpu_disassemble(riscv_cpu_t* const cpu, char* buffer, size_t buffer_size) {
+    if (NULL == cpu) return;
+
+    dword instr = cpu->host.mem_load_dword(cpu->pc);
+    cpu_disassemble_instr(cpu, buffer, buffer_size, instr);
 }
 
 int cpu_execute(riscv_cpu_t* const cpu) {
@@ -465,3 +472,5 @@ int cpu_execute(riscv_cpu_t* const cpu) {
 
 	return 1;
 }
+
+

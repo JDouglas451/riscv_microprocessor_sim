@@ -78,6 +78,9 @@ void cpu_panic(const riscv_cpu_t* const cpu, const char* message);
 // Have the CPU fill the provided stats struct with its current statistics
 void cpu_fill_stats(const riscv_cpu_t* const cpu, rsk_stat_t* stats);
 
+// Disassemble the provided instruction
+void cpu_disassemble_instr(riscv_cpu_t* const cpu, char* buffer, size_t buffer_size, dword instr);
+
 // Disassemble the current instruction
 void cpu_disassemble(riscv_cpu_t* const cpu, char* buffer, size_t buffer_size);
 
