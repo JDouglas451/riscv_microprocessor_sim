@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # RISC-V Sim Host (or RISC-V sim shell, if you prefer)
-# (c) 2023, Bob Jones University
+# (c) 2016-2023, Bob Jones University
+# Professionally mutilated by Joshua Douglas and Ryan Moffitt
 
 import argparse
 import ast
@@ -17,7 +18,7 @@ import threading
 import time
 from typing import Optional
 
-__version__ = "2023-11-01-1200"
+__version__ = "2023-11-09-1200"
 
 try:
     import msvcrt
@@ -85,7 +86,7 @@ MEM_SCALE = {
 # According to the RISC-V spec, EEI's may support misaligned loads/stores
 MEM_REQUIRE_ALIGNMENT = True
 
-ELF_HEADER = struct.Struct("<4s5B7x2H5I6H")
+ELF_HEADER = struct.Struct("<4s5B7x2H1I3Q1I6H")
 EH_MAGIC = 0
 EH_CLASS = 1
 EH_DATA = 2
@@ -100,15 +101,16 @@ EH_SHENTNUM = 17
 EH_SHSTRNDX = 18
 ET_EXEC = 2
 
-PROGRAM_HEADER = struct.Struct("<8I")
+PROGRAM_HEADER = struct.Struct("<2I6Q")
 PH_TYPE = 0
-PH_OFFSET = 1
-PH_VADDR = 2
-PH_FILESZ = 4
-PH_MEMSZ = 5
+PH_OFFSET = 2
+PH_VADDR = 3
+PH_FILESZ = 5
+PH_MEMSZ = 6
+
 PT_LOAD = 1
 
-SECTION_HEADER = struct.Struct("<6I16x")
+SECTION_HEADER = struct.Struct("<2I4Q2I2Q")
 SH_NAME = 0
 SH_OFFSET = 4
 SH_SIZE = 5
@@ -123,7 +125,15 @@ REG_NAME_MAP = {
     "x16": 16, "x17": 17, "x18": 18, "x19": 19,
     "x20": 20, "x21": 21, "x22": 22, "x23": 23,
     "x24": 24, "x25": 25, "x26": 26, "x27": 27,
-    "x28": 28, "x29": 29, "x30": 30, "x31": 31
+    "x28": 28, "x29": 29, "x30": 30, "x31": 31,
+    "zero": 0, "ra":   1, "sp":   2, "gp":   3,
+    "tp":   4, "t0":   5, "t1":   6, "t2":   7,
+    "s0":   8, "fp":   8, "s1":   9, "a0":  10,
+    "a1":  11, "a2":  12, "a3":  13, "a4":  14,
+    "a5":  15, "a6":  16, "a7":  17, "s2":  18,
+    "s3":  19, "s4":  20, "s5":  21, "s6":  22,
+    "s7":  23, "s8":  24, "s9":  25, "s10": 26,
+    "s11": 27, "t3":  28, "t4":  29, "t5":  30, "t6": 31,
 }
 
 # Config flags
@@ -159,15 +169,15 @@ class ElfFile(object):
         # Map the file into memory instead of slurping it into an array
         with open(filename, 'rb') as fd:
             self._raw = mmap.mmap(fd.fileno(), 0, access=mmap.ACCESS_READ)
-        
+
         # Parse as a 32-bit ELF header
         fields = ELF_HEADER.unpack_from(self._raw)
 
         # Simple sanity checks
         assert (fields[EH_MAGIC] == b"\x7fELF"), "{0} is *not* an ELF file!".format(filename)
-        assert (fields[EH_CLASS] == 1), "{0} is not a 32-bit ELF file!".format(filename)
+        assert (fields[EH_CLASS] == 2), "{0} is not a 64-bit ELF file!".format(filename)
         assert (fields[EH_DATA] == 1), "{0} uses big-endian data formatting!".format(filename)
-        assert (fields[EH_MACHINE] == 0x28), "{0} is not an ARM binary!".format(filename)
+        assert (fields[EH_MACHINE] == 0xF3), "{0} is not an RISCV binary!".format(filename)
         
         # Carve up section header table
         sh_table_size = fields[EH_SHENTSIZE] * fields[EH_SHENTNUM]
@@ -181,7 +191,6 @@ class ElfFile(object):
         strtab_start = strtab_sh[SH_OFFSET]
         strtab_end = strtab_start + strtab_sh[SH_SIZE]
         strtab_data = self._raw[strtab_start:strtab_end]
-        
         self._section_names = []
         for s in self._sections:
             name_start = s[SH_NAME]
@@ -205,7 +214,7 @@ class ElfFile(object):
 
     @property
     def segments(self):
-        for _, src_off, dst_addr, _, src_size, dst_size, flags, _ in self._segments:
+        for _, flags, src_off, dst_addr, _, src_size, dst_size, _ in self._segments:
             chunk = self._raw[src_off:src_off + src_size]
             if dst_size > src_size:
                 chunk += b'\0'*(dst_size - src_size)
@@ -236,24 +245,28 @@ class RISCVSimElfCompatScript:
     """
     def __init__(self, riscvsim_section : bytes, elf_entry_point : int = 0):
         self._regs = []
+        self._pc = None
 
         chunks = riscvsim_section.decode('utf-8').lower().split()
         for c in chunks:
             name, value = c.split('=', 1)
-            
             if value == "entry":
                 value = elf_entry_point
             else:
                 value = int(value, 0)
-
-            reg = REG_NAME_MAP[name]
-            self._regs.append((reg, value))
+            if name == "pc":
+                self._pc = value
+            else:
+                reg = REG_NAME_MAP[name]
+                self._regs.append((reg, value))
 
     def apply(self, rsk):
         """Apply a compatibiliy setting script to an already-initialized/reset kernel.
         """
         for reg, value in self._regs:
             rsk.reg_set(reg, value)
+        if self._pc is not None:
+            rsk.pc_set(self._pc)
 
 
 class rskHostServices(ctypes.Structure):
@@ -289,7 +302,7 @@ class rskHostServices(ctypes.Structure):
     MEM_STORE_BYTE_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_ulong, ctypes.c_ubyte)
 
     # void (*log_trace)(unsigned step, dword pc, dword *registers);
-    LOG_TRACE_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_uint, ctypes.c_ulong, *([ctypes.c_ulong]*32))
+    LOG_TRACE_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_uint, ctypes.c_uint64, *([ctypes.c_uint64])*42)
 
     # void (*log_msg)(const char *msg);
     LOG_MSG_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_char_p)
@@ -416,7 +429,7 @@ class RISCVSimShell:
     
     MMIO_BASE = 0x80000000
     
-    def __init__(self, mem_size, trace_log=None, debug_log=None, checksum=False, disasm_func=None):
+    def __init__(self, mem_size, trace_log=None, debug_log=None, checksum=False, disasm_func=None, register_history=None):
         """Create an RISC-V Sim host system with <mem_size> bytes of RAM.
         
         If <trace_log> is not None, generate a trace log to that file (STDERR if <trace_log> is '-').
@@ -444,6 +457,10 @@ class RISCVSimShell:
         RamType = ctypes.c_ubyte * mem_size
         self._ramlen = mem_size
         self._ram = RamType()
+        
+        print(register_history)
+        # Used to cache previous register values for log_trace()
+        self._register_history = register_history
         
         # Set up host services callbacks
         hs = rskHostServices()
@@ -487,14 +504,14 @@ class RISCVSimShell:
             if address >= self._ramlen:
                 panic("out-of-RAM load dword @ {0:016x}".format(address))
             else:
-                value : int = (self._ram[address] << 56)
-                value += (self._ram[address + 1] << 48)
-                value += (self._ram[address + 2] << 40)
-                value += (self._ram[address + 3] << 32)
-                value += (self._ram[address + 4] << 24)
-                value += (self._ram[address + 5] << 16)
-                value += (self._ram[address + 6] << 8)
-                value += (self._ram[address + 7])
+                value : int = (self._ram[address])
+                value += (self._ram[address + 1] << 8)
+                value += (self._ram[address + 2] << 16)
+                value += (self._ram[address + 3] << 24)
+                value += (self._ram[address + 4] << 32)
+                value += (self._ram[address + 5] << 40)
+                value += (self._ram[address + 6] << 48)
+                value += (self._ram[address + 7] << 56)
                 return value
 
     def mem_store_dword(self, address : int, value : int) -> int:
@@ -512,19 +529,20 @@ class RISCVSimShell:
             if address >= self._ramlen:
                 panic("out-of-RAM store dword @ {0:016x}".format(address))
             else:
-                self._ram[address] = (value >> 56)
-                self._ram[address + 1] = (value >> 48) & 0xff
-                self._ram[address + 2] = (value >> 40) & 0xff
-                self._ram[address + 3] = (value >> 32) & 0xff
-                self._ram[address + 4] = (value >> 24) & 0xff
-                self._ram[address + 5] = (value >> 16) & 0xff
-                self._ram[address + 6] = (value >> 8) & 0xff
-                self._ram[address + 7] = (value) & 0xff
+                self._ram[address] = (value)
+                self._ram[address + 1] = (value >> 8) & 0xff
+                self._ram[address + 2] = (value >> 16) & 0xff
+                self._ram[address + 3] = (value >> 24) & 0xff
+                self._ram[address + 4] = (value >> 32) & 0xff
+                self._ram[address + 5] = (value >> 40) & 0xff
+                self._ram[address + 6] = (value >> 48) & 0xff
+                self._ram[address + 7] = (value >> 56) & 0xff
     
     def mem_load_word(self, address : int) -> int:
         # Require word alignment
         if MEM_REQUIRE_ALIGNMENT and (address & 0b11):
             panic("misaligned load word @ {0:016x}".format(address))
+
 
         # Is this an MMIO load?
         if address >= self.MMIO_BASE:
@@ -532,15 +550,16 @@ class RISCVSimShell:
                 return self._mmio[address][0](address)
             except KeyError:
                 panic("unimplemented MMIO load word from {0:#x}".format(address))
+
         else:
             # Nope, RAM load; bounds check and return
             if address >= self._ramlen:
                 panic("out-of-RAM load word @ {0:016x}".format(address))
             else:
-                value : int = (self._ram[address] << 24)
-                value += (self._ram[address + 1] << 16)
-                value += (self._ram[address + 2] << 8)
-                value += (self._ram[address + 3])
+                value : int = (self._ram[address])
+                value += (self._ram[address + 1]  << 8)
+                value += (self._ram[address + 2] << 16)
+                value += (self._ram[address + 3] << 24)
                 return value
 
     def mem_store_word(self, address : int, value : int) -> int:
@@ -558,10 +577,10 @@ class RISCVSimShell:
             if address >= self._ramlen:
                 panic("out-of-RAM store word @ {0:016x}".format(address))
             else:
-                self._ram[address] = (value >> 24) & 0xff
-                self._ram[address + 1] = (value >> 16) & 0xff
-                self._ram[address + 2] = (value >> 8) & 0xff
-                self._ram[address + 3] = (value) & 0xff
+                self._ram[address] = (value) & 0xff
+                self._ram[address + 1] = (value >> 8) & 0xff
+                self._ram[address + 2] = (value >> 16) & 0xff
+                self._ram[address + 3] = (value >> 24) & 0xff
 
     def mem_load_hword(self, address : int) -> int:
         # Require hword alignment
@@ -579,8 +598,8 @@ class RISCVSimShell:
             if address >= self._ramlen:
                 panic("out-of-RAM load hword @ {0:016x}".format(address))
             else:
-                value : int = (self._ram[address] << 8)
-                value += (self._ram[address + 1])
+                value : int = (self._ram[address])
+                value += (self._ram[address + 1] << 8)
                 return value
 
     def mem_store_hword(self, address : int, value : int) -> int:
@@ -598,8 +617,8 @@ class RISCVSimShell:
             if address >= self._ramlen:
                 panic("out-of-RAM store hword @ {0:016x}".format(address))
             else:
-                self._ram[address] = (value >> 8) & 0xff
-                self._ram[address + 1] = (value) & 0xff
+                self._ram[address] = (value) & 0xff
+                self._ram[address + 1] = (value >> 8) & 0xff
 
     def mem_load_byte(self, address : int) -> int:
         # Is this an MMIO load?
@@ -627,69 +646,41 @@ class RISCVSimShell:
             else:
                 self._ram[address] = value
 
-    # TODO: Test log trace
-    # Used to cache previous register values for log_trace()
-    register_history = [0 for i in range(32)]
-
     def log_trace(self, step : int, pc : int, *gprs) -> None:
+        gprs = gprs[10:]
         if self._tlog:
             # Get checksum
             cksum = self.md5() if self._show_md5 else "-"*32
 
             # Begin log entry
-            print("{0:06} {1:08x} {2}".format(step, pc, cksum))
+            print("{0:06} {1:08x} {2}".format(step, pc, cksum), file=self._tlog)
 
             # Print changed registers
             col_width = 4
             col = 0
-            print("\t\t", end='')
+            print("\t\t", end='', file=self._tlog)
             for i in range(32):
-                if self.register_history[i] != gprs[i]:
-                    print("{0}={1:08x} ".format(i, gprs[i]), end='')
+                if self._register_history[i] != gprs[i]:
+                    print("{0}={1:08x} ".format(i, gprs[i]), end='', file=self._tlog)
 
                     col += 1
                     if col == col_width:
-                        print('\n\t\t', end='')
+                        print('\n\t\t', end='', file=self._tlog)
                         col = 0
-
+                    self._register_history[i] = gprs[i]
+            print("\n", end='', file=self._tlog)
+            
             # Print dissasembly
             if self._disasm_func:
                 iaddr = pc
-                iword = self._ram[iaddr >> 2]
-                print("\t\t({0})".format(self._disasm_func(iaddr, iword)))
+                iword = self.mem_load_word(iaddr)
+                print("\t\t({0})".format(self._disasm_func(iaddr, iword)), file=self._tlog)
 
             self._tlog.flush()
 
         for listener in self._beats:
             listener.heartbeat(step)
 
-#     # TODO: Format log trace to show only changed registers
-#     def log_trace(self, step : int, pc : int, *gprs) -> None:
-#         if self._tlog:
-#             if self._disasm_func:
-#                 iaddr = pc
-#                 iword = self._ram[iaddr >> 2]
-#                 disasm = "\n        ({0})".format(self._disasm_func(iaddr, iword))
-#             else:
-#                 disasm = ""
-#             cksum = self.md5() if self._show_md5 else "-"*32
-#             print("""\
-# {0:06} {1:08x} {2}\n\
-#  1={4:08x}  2={5:08x}  3={6:08x}  4={7:08x}\n\
-#  5={8:08x}  6={9:08x}  7={10:08x}  8={11:08x}\n\
-#  9={12:08x} 10={13:08x} 11={14:08x} 12={15:08x}\n\
-# 13={16:08x} 14={17:08x} 15={18:08x} 16={19:08x}\n\
-# 17={20:08x} 18={21:08x} 19={22:08x} 20={23:08x}\n\
-# 21={24:08x} 22={25:08x} 23={26:08x} 24={27:08x}\n\
-# 25={28:08x} 26={29:08x} 27={30:08x} 28={31:08x}\n\
-# 29={32:08x} 30={33:08x} 31={34:08x}\n\
-# {35}
-# """.format(step, pc, cksum, *gprs, disasm), file=self._tlog)
-#             self._tlog.flush()
-
-#         for listener in self._beats:
-#             listener.heartbeat(step)
-    
     def log_msg(self, msg):
         if self._dlog:
             print(msg.decode("ascii"), file=self._dlog)
@@ -890,7 +881,7 @@ class RISCVSimKernel:
     """
     def __init__(self, loaded_library):
         self._dll = loaded_library
-        self._has_disasm = False    # disasm is a backwards compatible extension to API version 1.0 (see `info()`)
+        self._has_disasm = True    # disasm is a backwards compatible extension to API version 1.0 (see `info()`)
         
         # rsk_info() -> char ** (NULL terminated list of NUL-terminated C strings)
         self._dll.rsk_info.restype = ctypes.POINTER(ctypes.c_char_p)
@@ -1199,14 +1190,17 @@ def main(argv) -> None:
         # Pre-configure processor based on embedded ".riscvsim" section in ELF file (if it exists)
         elf_compat = elf.get_section(".riscvsim")
         if elf_compat:
-            script = RISCVsimElfCompatScript(elf_compat, elf.entry)
+            script = RISCVSimElfCompatScript(elf_compat, elf.entry)
             script.apply(rsk)
+            shell._register_history = [rsk.reg_get(i) for i in range(32)]
 
         print()
         print("-"*60)
         print()
         shell.flush()
-
+        start = time.perf_counter()
+        rsk.run(0)
+        stop = time.perf_counter()
         # Print performance stats
         stats = rsk.stats()
         span = stop - start
