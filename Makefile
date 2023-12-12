@@ -38,6 +38,7 @@ $(TEST_SRC_DIR)%: $(TEST_SRC_DIR)%.s
 	$(RV_GCC) -o "$@.o" -c "$^"
 	$(RV_LD) -o "$@.l" "$@.o"
 	$(RV_OBJCPY) "$@.l"
+	@cp $(TEST_SRC_DIR)*.o $(TEST_BUILD_DIR)
 	@rm $(TEST_SRC_DIR)*.[lo] || true
 
 tests: $(patsubst %.s,%,$(wildcard $(TEST_SRC_DIR)*.s))

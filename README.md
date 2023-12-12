@@ -25,8 +25,8 @@ $ make tests
 ```
 Once built, their ELF files will appear in the **build/tests/** folder.
 
-To test the instruction decoding, run the following:
+To test the instruction decoding and disassembly, run the following:
 ```
 $ make isa_test
 ```
-The tests will be built and run automatically, and any instructions that do not decode correctly will be reported.
+The tests will be built and run automatically, and any instructions that do not decode or disassemble correctly will be reported.
