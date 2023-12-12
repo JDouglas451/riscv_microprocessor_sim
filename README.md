@@ -37,3 +37,12 @@ To test the instruction decoding and disassembly, run the following:
 $ make isa_test
 ```
 The tests will be built and run automatically, and any instructions that do not decode or disassemble correctly will be reported.
+
+## Project Structure
+The RISC-V simulator is designed so that only the CPU struct and functions dealing with CPU structs are exposed to external files. For testing, a testing header exposes the internal structs and functions of the simulator. It exists on the same level as 'rsk.c'. 
+
+### CPU Struct
+The CPU struct contains within itself references to several structs defined by the API, as well as an instruction registry struct and the PC and registers. The CPU has register access methods that treat the zero register correctly, as well as getter and setter methods for all of it's non-struct properties.
+
+### Instruction Registry
+The instruction registry struct contains an array of instruction type structs. Each of these has two sets of bits for matching instructions, as well as the name, disassembly function, and execution function of the instruction. The registry can be added to without the need to copy structs (it is resized to fit the added instructions, which are stored as pointers). A search method is defined to make matching instructions to types easy. In the future, I would like to make the process of adding instruction types easier and more unified (because C doesn't have lambdas, the disassembly and execution functions must be separated from the rest of the struct's declaration, meaning that two places must be referenced to see all of the implementation details of an instruction type.)
