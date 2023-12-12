@@ -2,6 +2,8 @@
 Author: Joshua Douglas (jdoug344)
 
 ## Building RSKAPI
+Before making use of the Makefile, it may be necessary to modify the paths at the head of the file (specifically, the paths to the riscv toolchain).
+
 To build the mockup with gcc test flags, run the following:
 ```
 $ make debug

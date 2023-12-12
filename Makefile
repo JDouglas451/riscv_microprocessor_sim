@@ -7,9 +7,6 @@ TEST_BUILD_DIR := build/tests/
 # default gcc flags
 CFLAGS = -DNDEBUG
 
-# prevent make taking too much initiative when building tests
-.SUFFIXES:
-
 # riscv compilation and linking
 RV_DIR := /opt/riscv/bin/
 RV_LINKER := linker.ld
@@ -20,6 +17,9 @@ RV_GCC := $(RV_DIR)riscv64-unknown-linux-gnu-gcc $(RV_GCC_FLAGS)
 
 RV_LD := $(RV_DIR)riscv64-unknown-linux-gnu-ld -T "$(RV_LINKER)" -n -e _start
 RV_OBJCPY := $(RV_DIR)riscv64-unknown-linux-gnu-objcopy --add-section .riscvsim="$(RV_COMPAT)" --set-section-flags .riscvsim=noload
+
+# prevent make taking too much initiative when building tests
+.SUFFIXES:
 
 librsk.so: riscv64.o
 	gcc $(CFLAGS) -fPIC -c -o $(BUILD_DIR)rskapi.o $(SRC_DIR)rsk.c
