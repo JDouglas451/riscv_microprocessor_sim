@@ -30,4 +30,14 @@ int main() {
 
     instr = OPCODE(0110011) | RD(01011) | FUNCT3(000) | RS1(00000) | RS2(10010) | FUNCT7(0000000);
     INSTR_ASSERT("add");
+
+    // TODO: SUB+ tests
+
+    instr = OPCODE(1110011) | RD(00000) | FUNCT3(000) | RS1(00000) | RS2(00001) | FUNCT7(0000000);
+    INSTR_ASSERT("ebreak");
+
+    // TODO: LW+ tests
+
+    instr = OPCODE(0011011) | RD(00010) | FUNCT3(000) | RS1(00000) | itype_immediate(-95);
+    INSTR_ASSERT("addiw");
 }

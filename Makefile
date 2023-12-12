@@ -52,6 +52,9 @@ rv64i_tests.o:
 isa_test: CFLAGS = -g -Wall -Werror
 isa_test: riscv64.o rv64i_tests.o
 
+objdump:
+	$(RV_DIR)riscv64-unknown-linux-gnu-objdump -d -M no-aliases $(FILE)
+
 # run the python host
 run: librsk.so
 	@python src/rsh.py build/librsk.so $(FILE)
