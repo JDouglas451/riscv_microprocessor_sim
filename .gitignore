@@ -7,6 +7,10 @@
 build/*
 .vscode/*
 
+# Don't ignore test files
+!tests/*
+!tests/expected/*
+
 # User-specific files
 *.rsuser
 *.suo

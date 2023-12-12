@@ -1,21 +1,51 @@
-# Directories
-WORKDIR = build/
-SRCDIR = src/
+# directories
+SRC_DIR = src/
+BUILD_DIR = build/
+TEST_SRC_DIR = tests/
+TEST_BUILD_DIR = build/tests/
 
+# default gcc flags
 CFLAGS = -DNDEBUG
 
+# prevent make taking too much initiative when building tests
+.SUFFIXES:
+
+# riscv compilation and linking
+RV_DIR = /opt/riscv/bin/
+RV_LINKER = linker.ld
+RV_COMPAT = compat.txt
+
+RV_GCC_FLAGS = -nostdlib -fno-builtin -nostartfiles -nodefaultlibs -march=rv64imd
+RV_GCC = $(RV_DIR)riscv64-unknown-linux-gnu-gcc $(RV_GCC_FLAGS)
+
+RV_LD = $(RV_DIR)riscv64-unknown-linux-gnu-ld -T "$(RV_LINKER)" -n -e _start
+RV_OBJCPY = $(RV_DIR)riscv64-unknown-linux-gnu-objcopy --add-section .riscvsim="$(RV_COMPAT)" --set-section-flags .riscvsim=noload
+
 librsk.so: riscv64.o
-	gcc $(CFLAGS) -fPIC -c -o $(WORKDIR)rskapi.o $(SRCDIR)rsk.c
-	gcc $(CDEBUG) -shared -o $(WORKDIR)librsk.so $(WORKDIR)rskapi.o $(WORKDIR)riscv64.o
+	gcc $(CFLAGS) -fPIC -c -o $(BUILD_DIR)rskapi.o $(SRC_DIR)rsk.c
+	gcc $(CFLAGS) -shared -o $(BUILD_DIR)librsk.so $(BUILD_DIR)rskapi.o $(BUILD_DIR)riscv64.o
 
 riscv64.o:
-	gcc $(CFLAGS) -fPIC -c -o $(WORKDIR)riscv64.o $(SRCDIR)riscv64.c
+	gcc $(CFLAGS) -fPIC -c -o $(BUILD_DIR)riscv64.o $(SRC_DIR)riscv64.c
 
+# debug gcc flags
 debug: CFLAGS = -g -Wall -Werror
 debug: librsk.so
 
+# pattern rule for test files
+$(TEST_SRC_DIR)%: $(TEST_SRC_DIR)%.s
+	@echo "Compiling and linking '$^'..."
+	$(RV_GCC) -o "$@.o" -c "$^"
+	$(RV_LD) -o "$@.l" "$@.o"
+	$(RV_OBJCPY) "$@.l"
+	@rm $(TEST_SRC_DIR)*.[lo] || true
+
+tests: $(patsubst %.s,%,$(wildcard $(TEST_SRC_DIR)*.s))
+
+# run the python host
 run:
 	@python src/rsh.py build/librsk.so
 
 clean:
-	@rm -r $(WORKDIR)*
+	@rm $(TEST_BUILD_DIR)* || true
+	@rm $(BUILD_DIR)*.* || true
