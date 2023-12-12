@@ -1,8 +1,8 @@
 # directories
-SRC_DIR = src/
-BUILD_DIR = build/
-TEST_SRC_DIR = tests/
-TEST_BUILD_DIR = build/tests/
+SRC_DIR := src/
+BUILD_DIR := build/
+TEST_SRC_DIR := tests/
+TEST_BUILD_DIR := build/tests/
 
 # default gcc flags
 CFLAGS = -DNDEBUG
@@ -11,15 +11,15 @@ CFLAGS = -DNDEBUG
 .SUFFIXES:
 
 # riscv compilation and linking
-RV_DIR = /opt/riscv/bin/
-RV_LINKER = linker.ld
-RV_COMPAT = compat.txt
+RV_DIR := /opt/riscv/bin/
+RV_LINKER := linker.ld
+RV_COMPAT := compat.txt
 
-RV_GCC_FLAGS = -nostdlib -fno-builtin -nostartfiles -nodefaultlibs -march=rv64imd
-RV_GCC = $(RV_DIR)riscv64-unknown-linux-gnu-gcc $(RV_GCC_FLAGS)
+RV_GCC_FLAGS := -nostdlib -fno-builtin -nostartfiles -nodefaultlibs -march=rv64imd
+RV_GCC := $(RV_DIR)riscv64-unknown-linux-gnu-gcc $(RV_GCC_FLAGS)
 
-RV_LD = $(RV_DIR)riscv64-unknown-linux-gnu-ld -T "$(RV_LINKER)" -n -e _start
-RV_OBJCPY = $(RV_DIR)riscv64-unknown-linux-gnu-objcopy --add-section .riscvsim="$(RV_COMPAT)" --set-section-flags .riscvsim=noload
+RV_LD := $(RV_DIR)riscv64-unknown-linux-gnu-ld -T "$(RV_LINKER)" -n -e _start
+RV_OBJCPY := $(RV_DIR)riscv64-unknown-linux-gnu-objcopy --add-section .riscvsim="$(RV_COMPAT)" --set-section-flags .riscvsim=noload
 
 librsk.so: riscv64.o
 	gcc $(CFLAGS) -fPIC -c -o $(BUILD_DIR)rskapi.o $(SRC_DIR)rsk.c
@@ -42,9 +42,18 @@ $(TEST_SRC_DIR)%: $(TEST_SRC_DIR)%.s
 
 tests: $(patsubst %.s,%,$(wildcard $(TEST_SRC_DIR)*.s))
 
+rv64i_tests.o:
+	gcc $(CFLAGS) $(SRC_DIR)rv64i_tests.c -o $(BUILD_DIR)rv64i_tests.o $(BUILD_DIR)riscv64.o
+	@echo "---------- Testing RV64I instructions ----------"
+	@chmod +x $(BUILD_DIR)rv64i_tests.o && ./$(BUILD_DIR)rv64i_tests.o
+	@echo "------------- RV64I tests complete -------------"
+
+isa_test: CFLAGS = -g -Wall -Werror
+isa_test: riscv64.o rv64i_tests.o
+
 # run the python host
-run:
-	@python src/rsh.py build/librsk.so
+run: librsk.so
+	@python src/rsh.py build/librsk.so $(FILE)
 
 clean:
 	@rm $(TEST_BUILD_DIR)* || true

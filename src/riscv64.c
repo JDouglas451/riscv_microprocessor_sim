@@ -29,6 +29,7 @@ typedef struct riscv64_instruction_type_registry {
     // The number of instruction types in the registry
     size_t count;
 
+    // TODO: redesign so that instructions can be added individually with automatically resizing array
     // An array of pointers to RISC-V 64 bit instruction type structs
     riscv_instr_t** type_links;
 } riscv_registry_t;
@@ -415,6 +416,12 @@ void cpu_fill_stats(const riscv_cpu_t* const cpu, rsk_stat_t* stats) {
     stats->stores = cpu->stats.stores;
     stats->load_misses = cpu->stats.load_misses;
     stats->store_misses = cpu->stats.store_misses;
+}
+
+const char* const cpu_identify_instr(riscv_cpu_t* const cpu, dword instr) {
+    riscv_instr_t* itype = registry_search(&cpu->instruction_set, instr);
+    if (NULL == itype) return NULL;
+    return itype->name;
 }
 
 void cpu_disassemble_instr(riscv_cpu_t* const cpu, char* buffer, size_t buffer_size, dword instr) {
