@@ -55,6 +55,9 @@ isa_test: riscv64.o rv64i_tests.o
 objdump:
 	$(RV_DIR)riscv64-unknown-linux-gnu-objdump -d -M no-aliases $(FILE)
 
+readelf:
+	$(RV_DIR)riscv64-unknown-linux-gnu-readelf -a $(FILE)
+
 # run the python host
 run: librsk.so
 	@python src/rsh.py build/librsk.so $(FILE)

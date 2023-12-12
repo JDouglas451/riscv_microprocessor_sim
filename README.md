@@ -21,11 +21,12 @@ $ make run [FILE=filename]
 ```
 This will run rsh.py with the librsk.so library. If the "mockup" has been included in the information array, then no other parameters are needed. If the program does not specify the mockup phase, the FILE argument can be filled to provide an ELF file to run. Without a file, only the simulator info will be printed.
 
-A command to run objdump on a file is also provided:
+Commands to run objdump and readelf are also provided:
 ```
 $ make objdump FILE=filename
+$ make readelf FILE=filename
 ```
-Note that the FILE argument is required for this command.
+Note that the FILE argument is required for these commands.
 
 ## API Tests
 A few tests are included with the project in the **tests/** folder. They can be built with:
