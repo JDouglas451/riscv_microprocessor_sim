@@ -953,7 +953,7 @@ class RISCVSimKernel:
         if "disasm" in info:
             self._has_disasm = True
             self._dll.rsk_disasm.restype = None
-            self._dll.rsk_disasm.argtypes = (ctypes.c_ulong, ctypes.c_ulong, ctypes.c_char_p, ctypes.c_size_t)
+            self._dll.rsk_disasm.argtypes = (ctypes.c_ulong, ctypes.c_uint, ctypes.c_char_p, ctypes.c_size_t)
 
         return info
 

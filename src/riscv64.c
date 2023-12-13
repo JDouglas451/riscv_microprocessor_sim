@@ -12,16 +12,16 @@ typedef struct riscv64_instruction_type {
     const char* const name;
 
 	// Mask of the required fields for this instruction type
-	const dword mask;
+	const word mask;
 
 	// Required bits within the mask for this instruction type
-	const dword required_bits;
+	const word required_bits;
 
 	// Disassemble an instruction of this type, putting the result into the provided string buffer. Returns the length of the complete disassembled instruction. If the buffer is not large enough to hold the instruction, the resulting string will be terminated early.
-	size_t (*disassemble)(riscv_cpu_t* const cpu, dword instr, char* buffer, size_t buffer_size);
+	size_t (*disassemble)(riscv_cpu_t* const cpu, word instr, char* buffer, size_t buffer_size);
 
 	// Execute an instruction of this type and return 1 if pc was changed (zero otherwise)
-	void (*execute)(riscv_cpu_t* const cpu, dword instr, int* updated_pc);
+	void (*execute)(riscv_cpu_t* const cpu, word instr, int* updated_pc);
 } riscv_instr_t;
 
 // A set of potentially many lists of instruction types
@@ -63,7 +63,7 @@ size_t registry_append(riscv_registry_t* const registry, size_t new_types_count,
 }
 
 // Return the pointer to the first instruction in the registry that matches the instruction (or NULL if no match was found)
-riscv_instr_t* registry_search(const riscv_registry_t* const registry, dword instr) {
+riscv_instr_t* registry_search(const riscv_registry_t* const registry, word instr) {
     for (size_t i = 0; i < registry->count; i++) {
         riscv_instr_t* itype = registry->type_links[i];
         if ((itype->mask & instr) == itype->required_bits) return itype;
@@ -102,48 +102,48 @@ riscv_instr_t* registry_search(const riscv_registry_t* const registry, dword ins
 // ---------- Instruction Decomposition Functions ----------
 
 // Isolate the opcode of an instruction
-static inline byte mask_instr_opcode(dword instruction) { return (byte) (instruction & INSTR_OPCODE); }
+static inline byte mask_instr_opcode(word instruction) { return (byte) (instruction & INSTR_OPCODE); }
 
 // Isolate the rd field of an R, I, U, or J format instruction
-static inline byte mask_instr_rd(dword instruction) { return (byte) ((instruction & INSTR_RD) >> 7); }
+static inline byte mask_instr_rd(word instruction) { return (byte) ((instruction & INSTR_RD) >> 7); }
 
 // Isolate the funct3 field of an R, I, S, or B format instruction
-static inline byte mask_instr_funct3(dword instruction) { return (byte) ((instruction & INSTR_FUNCT3) >> 12); }
+static inline byte mask_instr_funct3(word instruction) { return (byte) ((instruction & INSTR_FUNCT3) >> 12); }
 
 // Isolate the rs1 field of an R, I, S, or B format instruction
-static inline byte mask_instr_rs1(dword instruction) { return (byte) ((instruction & INSTR_RS1) >> 15); }
+static inline byte mask_instr_rs1(word instruction) { return (byte) ((instruction & INSTR_RS1) >> 15); }
 
 // Isolate the rs2 field of an R, S, or B format instruction
-static inline byte mask_instr_rs2(dword instruction) { return (byte) ((instruction & INSTR_RS2) >> 20); }
+static inline byte mask_instr_rs2(word instruction) { return (byte) ((instruction & INSTR_RS2) >> 20); }
 
 // Isolate the funct7 field of an R format instruction
-static inline byte mask_instr_funct7(dword instruction) { return (byte) ((instruction & INSTR_FUNCT7) >> 25); }
+static inline byte mask_instr_funct7(word instruction) { return (byte) ((instruction & INSTR_FUNCT7) >> 25); }
 
 // ---------- Instruction Immediate Decoding Functions ----------
 
 // Decode an unsigned immediate value from an I type instruction
-static inline dword unsigned_itype_imm(dword instr) {
+static inline word unsigned_itype_imm(word instr) {
 	return (BITSMASK(31, 20) & instr) >> 20;
 }
 
 // Decode a signed immediate value from an I type instruction
-static inline sdword itype_imm(dword instr) {
-	return (((sdword) unsigned_itype_imm(instr)) << 52) >> 52;
+static inline sword itype_imm(word instr) {
+	return (((sword) unsigned_itype_imm(instr)) << 20) >> 20;
 }
 
 // Decode an unsigned immediate value from an S type instruction
-static inline dword unsigned_stype_imm(dword instr) {
+static inline word unsigned_stype_imm(word instr) {
 	return ((BITSMASK(31, 25) & instr) >> 20) |
 	       ((BITSMASK(11, 7) & instr) >> 7);
 }
 
 // Decode a signed immediate value from an S type instruction
-static inline sdword stype_imm(dword instr) {
-	return (((sdword) unsigned_stype_imm(instr)) << 52) >> 52;
+static inline sword stype_imm(word instr) {
+	return (((sword) unsigned_stype_imm(instr)) << 20) >> 20;
 }
 
 // Decode an unsigned immediate value from a B type instruction
-static inline dword unsigned_btype_imm(dword instr) {
+static inline word unsigned_btype_imm(word instr) {
 	return ((INSTR_SIGN & instr) >> 19) |
 	       ((BITSMASK(30, 25) & instr) >> 20) |
 		   ((BITSMASK(11, 8) & instr) >> 7) |
@@ -151,22 +151,22 @@ static inline dword unsigned_btype_imm(dword instr) {
 }
 
 // Decode a signed immediate value from a B type instruction
-static inline sdword btype_imm(dword instr) {
-	return (((sdword) unsigned_btype_imm(instr)) << 51) >> 51;
+static inline sword btype_imm(word instr) {
+	return (((sword) unsigned_btype_imm(instr)) << 19) >> 19;
 }
 
 // Decode an unsigned immediate value from a U type instruction
-static inline dword unsigned_utype_imm(dword instr) {
+static inline word unsigned_utype_imm(word instr) {
 	return BITSMASK(31, 12) & instr;
 }
 
 // Decode a signed immediate value from a U type instruction
-static inline sdword utype_imm(dword instr) {
-	return (sdword) unsigned_utype_imm(instr);
+static inline sword utype_imm(word instr) {
+	return (sword) unsigned_utype_imm(instr);
 }
 
 // Decode an unsigned immediate value from a J type instruction
-static inline dword unsigned_jtype_imm(dword instr) {
+static inline word unsigned_jtype_imm(word instr) {
 	return ((INSTR_SIGN & instr) >> 11) |
 	       ((BITSMASK(30, 21) & instr) >> 20) |
 		   ((BITMASK(20) & instr) >> 9) |
@@ -174,14 +174,14 @@ static inline dword unsigned_jtype_imm(dword instr) {
 }
 
 // Decode a signed immediate value from a J type instruction
-static inline sdword jtype_imm(dword instr) {
-	return (((sdword) unsigned_jtype_imm(instr)) << 43) >> 43;
+static inline sword jtype_imm(word instr) {
+	return (((sword) unsigned_jtype_imm(instr)) << 11) >> 11;
 }
 
 // ---------- Disassembly/Execution Function Names ----------
 
-#define DISASM_DEF(name) size_t z_disasm_##name(riscv_cpu_t* const cpu, dword instr, char* buffer, size_t buffer_size)
-#define EXEC_DEF(name)   void z_exec_##name(riscv_cpu_t* const cpu, dword instr, int* updated_pc)
+#define DISASM_DEF(name) size_t z_disasm_##name(riscv_cpu_t* const cpu, word instr, char* buffer, size_t buffer_size)
+#define EXEC_DEF(name)   void z_exec_##name(riscv_cpu_t* const cpu, word instr, int* updated_pc)
 
 #define DISASM_FMT(format, ...) snprintf(buffer, buffer_size, format __VA_OPT__(, ) __VA_ARGS__)
 
@@ -418,21 +418,19 @@ void cpu_fill_stats(const riscv_cpu_t* const cpu, rsk_stat_t* stats) {
     stats->store_misses = cpu->stats.store_misses;
 }
 
-const char* const cpu_identify_instr(riscv_cpu_t* const cpu, dword instr) {
+const char* const cpu_identify_instr(riscv_cpu_t* const cpu, word instr) {
     riscv_instr_t* itype = registry_search(&cpu->instruction_set, instr);
     if (NULL == itype) return NULL;
     return itype->name;
 }
 
-void cpu_disassemble_instr(riscv_cpu_t* const cpu, char* buffer, size_t buffer_size, dword instr) {
+void cpu_disassemble_instr(riscv_cpu_t* const cpu, char* buffer, size_t buffer_size, word instr) {
     if (NULL == cpu) return;
-
-	// TODO: fix extreme and potentially inaccurate solution to buffer validation
 	if (buffer_size < 32) return;
 
 	char* bp = buffer;
 	size_t bps = buffer_size;
-	snprintf(bp, bps, "%#.8lx   ", instr);
+	snprintf(bp, bps, "%#.8x   ", instr);
 	bp += 13;
 	bps -= 13;
 
@@ -450,7 +448,7 @@ void cpu_disassemble_instr(riscv_cpu_t* const cpu, char* buffer, size_t buffer_s
 void cpu_disassemble(riscv_cpu_t* const cpu, char* buffer, size_t buffer_size) {
     if (NULL == cpu) return;
 
-    dword instr = cpu->host.mem_load_dword(cpu->pc);
+    word instr = cpu->host.mem_load_word(cpu->pc);
     cpu_disassemble_instr(cpu, buffer, buffer_size, instr);
 }
 
@@ -459,7 +457,7 @@ int cpu_execute(riscv_cpu_t* const cpu) {
 	cpu->is_running = 1;
 
 	// get current instruction an add to disasm buffer
-	dword instr = cpu->host.mem_load_dword(cpu->pc);
+	word instr = cpu->host.mem_load_word(cpu->pc);
 	if (instr == RV64I_EBREAK) {
 		cpu->is_running = 0;
 		return 0;
@@ -479,5 +477,3 @@ int cpu_execute(riscv_cpu_t* const cpu) {
 
 	return 1;
 }
-
-

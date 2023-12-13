@@ -3,7 +3,7 @@
 int main() {
     TESTING_INIT;
 
-    dword instr = OPCODE(0110111) | RD(00110) | utype_immediate(5120);
+    word instr = OPCODE(0110111) | RD(00110) | utype_immediate(5120);
     INSTR_ASSERT("lui");
     DISASM_ASSERT("0x00001337   lui x6, 0x1000");
 

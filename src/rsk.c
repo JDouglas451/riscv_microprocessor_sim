@@ -30,8 +30,13 @@ const char* const* rsk_info(void) {
     return riscv_sim_info;
 }
 
-void rsk_disasm(dword instruction, char* buffer, size_t size) {
-	cpu_disassemble(cpu, buffer, size);
+void rsk_disasm(dword address, word instruction, char* buffer, size_t size) {
+    // add address
+    if (size < 22) return;
+    snprintf(buffer, size, "%#.16lx   ", address);
+
+    // add instruction disassembly
+	cpu_disassemble_instr(cpu, buffer + 21, size - 21, instruction);
 }
 
 void rsk_init(const rsk_host_services_t* services) {

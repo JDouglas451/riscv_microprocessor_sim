@@ -3,13 +3,12 @@
 
 // The RV64I Base Integer Instruction Set
 
-// TODO: Fix dissasembly offset signed/hexadecimal formatting
-
 // ---------- Dissasembly and Execution Functions ----------
 
 // Load upper immediate (lui)
 DISASM_DEF(lui) {
-	return DISASM_FMT("lui x%hhu, %#lx", GET_RD, utype_imm(instr));
+	sword imm = utype_imm(instr);
+	return DISASM_FMT(imm < 0 ? "lui x%hhu, %d" : "lui x%hhu, %#x", GET_RD, imm);
 }
 
 EXEC_DEF(lui) {
@@ -20,7 +19,8 @@ EXEC_DEF(lui) {
 
 // Add immediate (addi)
 DISASM_DEF(addi) {
-	return DISASM_FMT("addi x%hhu, x%hhu, %#lx", GET_RD, GET_RS1, itype_imm(instr));
+	sword imm = itype_imm(instr);
+	return DISASM_FMT(imm < 0 ? "addi x%hhu, x%hhu, %d" : "addi x%hhu, x%hhu, %#x", GET_RD, GET_RS1, imm);
 }
 
 EXEC_DEF(addi) {
@@ -32,7 +32,8 @@ EXEC_DEF(addi) {
 
 // XOR immediate (xori)
 DISASM_DEF(xori) {
-	return DISASM_FMT("xori x%hhu, x%hhu, %#lx", GET_RD, GET_RS1, itype_imm(instr));
+	sword imm = itype_imm(instr);
+	return DISASM_FMT(imm < 0 ? "xori x%hhu, x%hhu, %d" : "xori x%hhu, x%hhu, %#x", GET_RD, GET_RS1, imm);
 }
 
 EXEC_DEF(xori) {
@@ -41,7 +42,8 @@ EXEC_DEF(xori) {
 
 // OR immediate (ori)
 DISASM_DEF(ori) {
-	return DISASM_FMT("ori x%hhu, x%hhu, %#lx", GET_RD, GET_RS1, itype_imm(instr));
+	sword imm = itype_imm(instr);
+	return DISASM_FMT(imm < 0 ? "ori x%hhu, x%hhu, %d" : "ori x%hhu, x%hhu, %#x", GET_RD, GET_RS1, imm);
 }
 
 EXEC_DEF(ori) {
@@ -50,7 +52,8 @@ EXEC_DEF(ori) {
 
 // AND immediate (andi)
 DISASM_DEF(andi) {
-	return DISASM_FMT("andi x%hhu, x%hhu, %#lx", GET_RD, GET_RS1, itype_imm(instr));
+	sword imm = itype_imm(instr);
+	return DISASM_FMT(imm < 0 ? "andi x%hhu, x%hhu, %d" : "andi x%hhu, x%hhu, %#x", GET_RD, GET_RS1, imm);
 }
 
 EXEC_DEF(andi) {
@@ -59,7 +62,8 @@ EXEC_DEF(andi) {
 
 // Immediate logical shift left (slli)
 DISASM_DEF(slli) {
-	return DISASM_FMT("slli x%hhu, x%hhu, %#lx", GET_RD, GET_RS1, itype_imm(instr));
+	dword imm = (BITSMASK(25, 20) & instr) >> 20;
+	return DISASM_FMT("slli x%hhu, x%hhu, %#lx", GET_RD, GET_RS1, imm);
 }
 
 EXEC_DEF(slli) {
@@ -79,7 +83,6 @@ EXEC_DEF(srli) {
 
 // Immediate arithmetic right shift (srai)
 DISASM_DEF(srai) {
-	// Standard immediate decoding cannot be used here
 	dword imm = (BITSMASK(25, 20) & instr) >> 20;
 	return DISASM_FMT("srai x%hhu, x%hhu, %#lx", GET_RD, GET_RS1, imm);
 }
@@ -170,7 +173,8 @@ EXEC_DEF(ebreak) {
 
 // Load 32-bit (lw)
 DISASM_DEF(lw) {
-	return DISASM_FMT("lw x%hhu, %#lx(x%hhu)", GET_RD, itype_imm(instr), GET_RS1);
+	sword imm = itype_imm(instr);
+	return DISASM_FMT(imm < 0 ? "lw x%hhu, %d(x%hhu)" : "lw x%hhu, %#x(x%hhu)", GET_RD, imm, GET_RS1);
 }
 
 EXEC_DEF(lw) {
@@ -184,7 +188,8 @@ EXEC_DEF(lw) {
 
 // Store 32-bit (sw)
 DISASM_DEF(sw) {
-	return DISASM_FMT("sw x%hhu, %#lx(x%hhu)", GET_RS2, stype_imm(instr), GET_RS1);
+	sword imm = stype_imm(instr);
+	return DISASM_FMT(imm < 0 ? "sw x%hhu, %d(x%hhu)" : "sw x%hhu, %#x(x%hhu)", GET_RS2, imm, GET_RS1);
 }
 
 EXEC_DEF(sw) {
@@ -193,7 +198,8 @@ EXEC_DEF(sw) {
 
 // Jump and link (jal)
 DISASM_DEF(jal) {
-    return DISASM_FMT("jal %hhu, %#lx", GET_RD, jtype_imm(instr));
+	sword imm = jtype_imm(instr);
+    return DISASM_FMT(imm < 0 ? "jal %hhu, %d" : "jal %hhu, %#x", GET_RD, imm);
 }
 
 EXEC_DEF(jal) {
@@ -203,7 +209,8 @@ EXEC_DEF(jal) {
 
 // Jump and link register (jalr)
 DISASM_DEF(jalr) {
-    return DISASM_FMT("jalr %hhu, %hhu, %#lx", GET_RD, GET_RS1, itype_imm(instr));
+	sword imm = itype_imm(instr);
+    return DISASM_FMT(imm < 0 ? "jalr %hhu, %hhu, %d" : "jalr %hhu, %hhu, %#x", GET_RD, GET_RS1, imm);
 }
 
 EXEC_DEF(jalr) {
@@ -214,7 +221,8 @@ EXEC_DEF(jalr) {
 
 // Branch if equal (beq)
 DISASM_DEF(beq) {
-    return DISASM_FMT("beq %hhu, %hhu, %#lx", GET_RS1, GET_RS2, btype_imm(instr));
+	sword imm = btype_imm(instr);
+    return DISASM_FMT(imm < 0 ? "beq %hhu, %hhu, %d" : "beq %hhu, %hhu, %#x", GET_RS1, GET_RS2, imm);
 }
 
 EXEC_DEF(beq) {
@@ -225,7 +233,8 @@ EXEC_DEF(beq) {
 
 // Branch if not equal (bne)
 DISASM_DEF(bne) {
-    return DISASM_FMT("bne %hhu, %hhu, %#lx", GET_RS1, GET_RS2, btype_imm(instr));
+	sword imm = btype_imm(instr);
+    return DISASM_FMT(imm < 0 ? "bne %hhu, %hhu, %d" : "bne %hhu, %hhu, %#x", GET_RS1, GET_RS2, imm);
 }
 
 EXEC_DEF(bne) {
@@ -236,29 +245,32 @@ EXEC_DEF(bne) {
 
 // Branch if less than (blt)
 DISASM_DEF(blt) {
-    return DISASM_FMT("blt %hhu, %hhu, %#lx", GET_RS1, GET_RS2, btype_imm(instr));
+	sword imm = btype_imm(instr);
+    return DISASM_FMT(imm < 0 ? "blt %hhu, %hhu, %d" : "blt %hhu, %hhu, %#x", GET_RS1, GET_RS2, imm);
 }
 
 EXEC_DEF(blt) {
-    if (READ_REG((sdword) GET_RS1) < (sdword) READ_REG(GET_RS2)) {
+    if ((sdword) READ_REG( GET_RS1) < (sdword) READ_REG(GET_RS2)) {
         SET_PC(GET_PC + btype_imm(instr));
     }
 }
 
 // Branch if greater than or equal (bge)
 DISASM_DEF(bge) {
-    return DISASM_FMT("bge %hhu, %hhu, %#lx", GET_RS1, GET_RS2, btype_imm(instr));
+	sword imm = btype_imm(instr);
+    return DISASM_FMT(imm < 0 ? "bge %hhu, %hhu, %d" : "bge %hhu, %hhu, %#x", GET_RS1, GET_RS2, imm);
 }
 
 EXEC_DEF(bge) {
-    if (READ_REG((sdword) GET_RS1) >= (sdword) READ_REG(GET_RS2)) {
+    if ((sdword) READ_REG(GET_RS1) >= (sdword) READ_REG(GET_RS2)) {
         SET_PC(GET_PC + btype_imm(instr));
     }
 }
 
 // Unsigned branch if less than (bltu)
 DISASM_DEF(bltu) {
-    return DISASM_FMT("bltu %hhu, %hhu, %#lx", GET_RS1, GET_RS2, btype_imm(instr));
+	sword imm = btype_imm(instr);
+    return DISASM_FMT(imm < 0 ? "bltu %hhu, %hhu, %d" : "bltu %hhu, %hhu, %#x", GET_RS1, GET_RS2, imm);
 }
 
 EXEC_DEF(bltu) {
@@ -269,7 +281,8 @@ EXEC_DEF(bltu) {
 
 // Unsigned branch if greater than or equal (bgeu)
 DISASM_DEF(bgeu) {
-    return DISASM_FMT("bgeu %hhu, %hhu, %#lx", GET_RS1, GET_RS2, btype_imm(instr));
+	sword imm = btype_imm(instr);
+    return DISASM_FMT(imm < 0 ? "bgeu %hhu, %hhu, %d" : "bgeu %hhu, %hhu, %#x", GET_RS1, GET_RS2, imm);
 }
 
 EXEC_DEF(bgeu) {
@@ -282,7 +295,8 @@ EXEC_DEF(bgeu) {
 
 // Add word immediate (addiw)
 DISASM_DEF(addiw) {
-    return DISASM_FMT("addiw %hhu, %hhu, %#lx", GET_RD, GET_RS1, itype_imm(instr));
+	sword imm = itype_imm(instr);
+    return DISASM_FMT(imm < 0 ? "addiw %hhu, %hhu, %d" : "addiw %hhu, %hhu, %#x", GET_RD, GET_RS1, imm);
 }
 
 EXEC_DEF(addiw) {
@@ -301,7 +315,8 @@ EXEC_DEF(addiw) {
 
 // Load dword (ld)
 DISASM_DEF(ld) {
-    return DISASM_FMT("ld %hhu, %#lx(%hhu)", GET_RD, itype_imm(instr), GET_RS1);
+	sword imm = itype_imm(instr);
+    return DISASM_FMT(imm < 0 ? "ld %hhu, %d(%hhu)" : "ld %hhu, %#x(%hhu)", GET_RD, imm, GET_RS1);
 }
 
 EXEC_DEF(ld) {
@@ -310,7 +325,8 @@ EXEC_DEF(ld) {
 
 // Store dword (sd)
 DISASM_DEF(sd) {
-    return DISASM_FMT("sd %hhu, %#lx(%hhu)", GET_RS2, stype_imm(instr), GET_RS1);
+	sword imm = stype_imm(instr);
+    return DISASM_FMT(imm < 0 ? "sd %hhu, %d(%hhu)" : "sd %hhu, %#x(%hhu)", GET_RS2, imm, GET_RS1);
 }
 
 EXEC_DEF(sd) {

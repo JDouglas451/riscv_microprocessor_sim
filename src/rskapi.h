@@ -115,7 +115,7 @@ typedef struct rsk_stats {
 const char* const* rsk_info(void);
 
 // Disassemble a given 64-bit RISC-V <instruction> into the string buffer provided. The <address> where the instruction is found in memory is only required to calculate branch targets.
-void rsk_disasm(dword instruction, char* buffer, size_t size);
+void rsk_disasm(dword address, word instruction, char* buffer, size_t size);
 
 // Reset/initialize the simulated CPU, binding it to the environment provided by the host services functions
 void rsk_init(const rsk_host_services_t* services);

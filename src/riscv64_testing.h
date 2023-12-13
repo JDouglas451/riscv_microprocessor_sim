@@ -45,26 +45,26 @@
 
 // ---------- Immediate Encoding Functions ----------
 
-const dword itype_immediate(const sdword value) {
+const word itype_immediate(const sword value) {
     return (value << 20);
 }
 
-const dword stype_immediate(const sdword value) {
+const word stype_immediate(const sword value) {
     return ((BITSMASK(11, 5) & value) << 20) | ((BITSMASK(4, 0) & value) << 6);
 }
 
-const dword btype_immediate(const sdword value) {
+const word btype_immediate(const sword value) {
     return (INSTR_SIGN & value) |
            ((BITMASK(11) & value) >> 4) |
            ((BITSMASK(10, 5) & value) << 20) |
            ((BITSMASK(4, 1) & value) << 7);
 }
 
-const dword utype_immediate(const sdword value) {
+const word utype_immediate(const sword value) {
     return BITSMASK(31, 12) & value;
 }
 
-const dword jtype_immediate(const sdword value) {
+const word jtype_immediate(const sword value) {
     return (INSTR_SIGN & value) |
            (BITSMASK(19, 12) & value) |
            ((BITMASK(11) & value) << 9) |
