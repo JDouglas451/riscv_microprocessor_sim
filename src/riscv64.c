@@ -75,7 +75,7 @@ riscv_instr_t* registry_search(const riscv_registry_t* const registry, word inst
 // ---------- Preprocessor Bit Mask Construction ----------
 
 #define BITSMASK(high, low) ((__UINT64_MAX__ << (high + 1)) ^ (__UINT64_MAX__ << low))
-#define BITMASK(bit)        BITSMASK(bit, bit)
+#define BITMASK(bit)        (1 << bit)
 
 // ---------- Intruction Preprocessor Shortcuts ----------
 
