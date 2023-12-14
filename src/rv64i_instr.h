@@ -307,7 +307,17 @@ EXEC_DEF(addiw) {
 // TODO: slliw
 // TODO: srliw
 // TODO: sraiw
-// TODO: addw
+
+// Add word
+DISASM_DEF(addw) {
+	return DISASM_FMT("addw x%hhu, x%hhu, x%hhu", GET_RD, GET_RS1, GET_RS2);
+}
+
+EXEC_DEF(addw) {
+	sdword sum = (sdword) READ_REG(GET_RS1) + (sdword) READ_REG(GET_RS2);
+	WRITE_REG(GET_RD, (sum << 32) >> 32);
+}
+
 // TODO: subw
 // TODO: sllw
 // TODO: srlw
@@ -536,6 +546,14 @@ riscv_instr_t rv64i_instructions[] = {
         .required_bits = OPCODE(0011011) | FUNCT3(000),
         INSTR_LINKS(addiw)
     },
+
+	// Add word (addw)
+	{
+		.name = "addw",
+		.mask = INSTR_OPCODE |  INSTR_FUNCT3 | INSTR_FUNCT7,
+		.required_bits = OPCODE(0111011) | FUNCT3(000) | FUNCT7(0000000),
+		INSTR_LINKS(addw)
+	},
 
     // Load dword (ld)
 	{
