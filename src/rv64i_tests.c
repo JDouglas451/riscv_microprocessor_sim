@@ -46,4 +46,7 @@ int main() {
 
     instr = OPCODE(0011011) | RD(00010) | FUNCT3(000) | RS1(00000) | itype_immediate(-95);
     INSTR_ASSERT("addiw");
+
+    instr = OPCODE(0000011) | RD(00010) | FUNCT3(011) | RS1(00000) | itype_immediate(67);
+    INSTR_ASSERT("ld");
 }

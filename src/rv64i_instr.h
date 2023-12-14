@@ -138,7 +138,7 @@ DISASM_DEF(sra) {
 }
 
 EXEC_DEF(sra) {
-	WRITE_REG(GET_RD, READ_REG(GET_RS1) >> (sdword) READ_REG(GET_RS2));
+	WRITE_REG(GET_RD, ((sdword) READ_REG(GET_RS1)) >> READ_REG(GET_RS2));
 }
 
 // TODO: or
@@ -160,7 +160,7 @@ DISASM_DEF(ebreak) {
 }
 
 EXEC_DEF(ebreak) {
-	// TODO: raise breakpoint exception (set running to 0?)
+	// TODO: raise breakpoint exception
 }
 
 // TODO: uret
@@ -178,7 +178,8 @@ DISASM_DEF(lw) {
 }
 
 EXEC_DEF(lw) {
-	WRITE_REG(GET_RD, READ_REG(GET_RS1) + itype_imm(instr));
+	WRITE_REG(GET_RD, LOAD_WORD(READ_REG(GET_RS1) + itype_imm(instr)));
+	*loaded=1;
 }
 
 // TODO: lbu
@@ -540,7 +541,7 @@ riscv_instr_t rv64i_instructions[] = {
 	{
 		.name = "ld",
 		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
-        .required_bits = OPCODE(0000000) | FUNCT3(011),
+        .required_bits = OPCODE(0000011) | FUNCT3(011),
         INSTR_LINKS(ld)
     },
 
