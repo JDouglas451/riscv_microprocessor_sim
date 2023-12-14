@@ -479,8 +479,11 @@ int cpu_execute(riscv_cpu_t* const cpu) {
     int loaded_val = 0;
     int stored_val = 0;
 
+    dword old_pc = cpu->pc;
 	itype->execute(cpu, instr, &updated_pc, &loaded_val, &stored_val);
 	if (!updated_pc) cpu->pc += 4;
+
+    if ((cpu->config & rc_trace_log) != 0) cpu->host.log_trace(cpu->stats.instructions, old_pc, cpu->x);
     cpu->stats.instructions += 1;
 
 	return 1;

@@ -302,7 +302,7 @@ class rskHostServices(ctypes.Structure):
     MEM_STORE_BYTE_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_ulong, ctypes.c_ubyte)
 
     # void (*log_trace)(unsigned step, dword pc, dword *registers);
-    LOG_TRACE_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_uint, ctypes.c_uint64, *([ctypes.c_uint64])*42)
+    LOG_TRACE_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_uint, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64))
 
     # void (*log_msg)(const char *msg);
     LOG_MSG_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_char_p)
@@ -646,8 +646,7 @@ class RISCVSimShell:
             else:
                 self._ram[address] = value
 
-    def log_trace(self, step : int, pc : int, *gprs) -> None:
-        gprs = gprs[10:]
+    def log_trace(self, step : int, pc : int, gprs) -> None:
         if self._tlog:
             # Get checksum
             cksum = self.md5() if self._show_md5 else "-"*32

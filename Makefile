@@ -64,7 +64,7 @@ readelf:
 
 # run the python host
 run: librsk.so
-	@python src/rsh.py build/librsk.so $(FILE)
+	@python src/rsh.py -t $(TEST_BUILD_DIR)$(basename $(notdir $(FILE))).log build/librsk.so $(FILE)
 
 clean:
 	@find "$(TEST_BUILD_DIR)" -maxdepth 1 -type f -delete

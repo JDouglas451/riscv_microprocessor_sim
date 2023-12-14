@@ -12,7 +12,7 @@
 #define TESTING_BUFFER_SIZE 80
 #define TESTING_INIT riscv_cpu_t* cpu = cpu_init(NULL, &test_services); if (NULL == cpu) return 1; char buffer[TESTING_BUFFER_SIZE]; size_t buffer_size = TESTING_BUFFER_SIZE;
 
-#define INSTR_ASSERT(str_a) if (NULL == str_a || NULL == cpu_identify_instr(cpu, instr) || 0 != strncmp(str_a, cpu_identify_instr(cpu, instr), sizeof(str_a))) { fprintf(stderr, "Match failed: '%s' (evaluated to '%s')", str_a, cpu_identify_instr(cpu, instr)); }
+#define INSTR_ASSERT(str_a) if (NULL == str_a || NULL == cpu_identify_instr(cpu, instr) || 0 != strncmp(str_a, cpu_identify_instr(cpu, instr), sizeof(str_a))) { fprintf(stderr, "Match failed: '%s' (evaluated to '%s')\n", str_a, cpu_identify_instr(cpu, instr)); }
 
 #define DISASM_ASSERT(str_a) cpu_disassemble_instr(cpu, buffer, buffer_size, instr); if (NULL == str_a || 0 != strncmp(str_a, buffer, sizeof(str_a))) { fprintf(stderr, "Disassembly failed\nExpected: '%s'\nResult:   '%s'\n", str_a, buffer); }
 

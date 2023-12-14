@@ -448,6 +448,14 @@ riscv_instr_t rv64i_instructions[] = {
 		INSTR_LINKS(ebreak)
 	},
 
+	// Load 32 bit (lw)
+	{
+		.name = "lw",
+		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
+		.required_bits = OPCODE(0000011) | FUNCT3(010),
+		INSTR_LINKS(lw)
+	},
+
 	// Store 32-bit (sw)
 	{
 		.name = "sw",

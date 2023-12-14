@@ -36,7 +36,13 @@ int main() {
     instr = OPCODE(1110011) | RD(00000) | FUNCT3(000) | RS1(00000) | RS2(00001) | FUNCT7(0000000);
     INSTR_ASSERT("ebreak");
 
-    // TODO: LW+ tests
+    instr = OPCODE(0000011) | FUNCT3(010) | RD(10000) | RS1 (00000) | itype_immediate(76);
+    INSTR_ASSERT("lw");
+
+    instr = OPCODE(0100011) | FUNCT3(010) | RS1(10000) | RS2(00000) | stype_immediate(76);
+    INSTR_ASSERT("sw");
+
+    // TODO: JAL+ tests
 
     instr = OPCODE(0011011) | RD(00010) | FUNCT3(000) | RS1(00000) | itype_immediate(-95);
     INSTR_ASSERT("addiw");
