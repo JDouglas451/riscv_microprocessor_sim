@@ -422,7 +422,7 @@ riscv_instr_t rv64i_instructions[] = {
 		.name = "sll",
 		.mask =    INSTR_OPCODE |    INSTR_FUNCT3 | INSTR_FUNCT7,
 		.required_bits = OPCODE(0110011) | FUNCT3(001) |  FUNCT7(0000000),
-		INSTR_LINKS(sub)
+		INSTR_LINKS(sll)
 	},
 
 	// Logical right shift (srl)
