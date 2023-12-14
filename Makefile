@@ -39,10 +39,9 @@ $(TEST_SRC_DIR)%: $(TEST_SRC_DIR)%.s
 	@echo "Compiling and linking '$^'..."
 
 	$(RV_GCC) -o "$@.o" -c "$^" $(RV_GCC_FLAGS)
-	$(RV_LD) -T "$(RV_LINKER)" -Ttext=0x1000 -n -e _start -o "$@.exe" "$@.o"
-	$(RV_OBJCPY) --add-section .riscvsim="$(RV_COMPAT)" --set-section-flags .riscvsim=noload "$@.exe"
+	$(RV_LD) -T "$(RV_LINKER)" -Ttext=0x1000 -n -e _start -o "$(TEST_BUILD_DIR)$(notdir $@).exe" "$@.o"
+	$(RV_OBJCPY) --add-section .riscvsim="$(RV_COMPAT)" --set-section-flags .riscvsim=noload "$(TEST_BUILD_DIR)$(notdir $@).exe"
 
-	@mv "$@.exe" $(TEST_BUILD_DIR)
 	@find "$(TEST_SRC_DIR)" -maxdepth 1 -type f -not -name "*.s" -delete
 
 tests: $(patsubst %.s,%,$(wildcard $(TEST_SRC_DIR)*.s))

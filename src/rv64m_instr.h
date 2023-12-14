@@ -11,7 +11,7 @@ DISASM_DEF(mul) {
 }
 
 EXEC_DEF(mul) {
-    WRITE_REG(GET_RD, (sdword) GET_RS1 * (sdword) GET_RS2);
+    WRITE_REG(GET_RD, ((sdword) READ_REG(GET_RS1)) * ((sdword) READ_REG(GET_RS2)));
 }
 
 // TODO: mulh
