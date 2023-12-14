@@ -57,7 +57,7 @@ isa_test: CFLAGS = -g -Wall -Werror
 isa_test: riscv64.o rv64i_tests.o
 
 objdump:
-	$(RV_DIR)riscv64-unknown-linux-gnu-objdump -d -Mno-aliases $(FILE)
+	$(RV_DIR)riscv64-unknown-linux-gnu-objdump -d -Mno-aliases -Mnumeric $(FILE)
 
 readelf:
 	$(RV_DIR)riscv64-unknown-linux-gnu-readelf -a $(FILE)

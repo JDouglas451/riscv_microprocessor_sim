@@ -67,7 +67,7 @@ DISASM_DEF(slli) {
 }
 
 EXEC_DEF(slli) {
-	WRITE_REG(GET_RD, READ_REG(GET_RS1) >> itype_imm(instr));
+	WRITE_REG(GET_RD, READ_REG(GET_RS1) << itype_imm(instr));
 }
 
 // Immediate logical right shift (srli)
@@ -78,7 +78,7 @@ DISASM_DEF(srli) {
 
 EXEC_DEF(srli) {
 	dword imm = (BITSMASK(25, 20) & instr) >> 20;
-	WRITE_REG(GET_RD, READ_REG(GET_RS1) << imm);
+	WRITE_REG(GET_RD, READ_REG(GET_RS1) >> imm);
 }
 
 // Immediate arithmetic right shift (srai)
@@ -89,7 +89,7 @@ DISASM_DEF(srai) {
 
 EXEC_DEF(srai) {
 	dword imm = (BITSMASK(25, 20) & instr) >> 20;
-	WRITE_REG(GET_RD, (sdword) READ_REG(GET_RS1) >> imm);
+	WRITE_REG(GET_RD, ((sdword) READ_REG(GET_RS1)) >> imm);
 }
 
 // 64-bit addition (add)
