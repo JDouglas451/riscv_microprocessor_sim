@@ -78,6 +78,9 @@ void cpu_panic(const riscv_cpu_t* const cpu, const char* message);
 // Have the CPU fill the provided stats struct with its current statistics
 void cpu_fill_stats(const riscv_cpu_t* const cpu, rsk_stat_t* stats);
 
+// Get the number of instructions executed by the cpu since initialization
+unsigned int cpu_stat_instructions(riscv_cpu_t* const cpu);
+
 // Return the instruction name of an encoded instruction
 const char* const cpu_identify_instr(riscv_cpu_t* const cpu, word instr);
 

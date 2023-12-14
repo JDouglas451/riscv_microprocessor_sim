@@ -321,6 +321,7 @@ DISASM_DEF(ld) {
 
 EXEC_DEF(ld) {
     WRITE_REG(GET_RD, LOAD_DWORD(READ_REG(GET_RS1) + itype_imm(instr)));
+	*loaded=1;
 }
 
 // Store dword (sd)

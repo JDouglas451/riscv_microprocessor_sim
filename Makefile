@@ -19,6 +19,7 @@ RV_OBJCPY := $(RV_DIR)riscv64-unknown-linux-gnu-objcopy
 
 # prevent make taking too much initiative when building tests
 .SUFFIXES:
+.PHONY: clean run debug tests objdump readelf
 
 librsk.so: riscv64.o
 	gcc $(CFLAGS) -fPIC -c -o $(BUILD_DIR)rskapi.o $(SRC_DIR)rsk.c

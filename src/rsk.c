@@ -19,6 +19,7 @@
 const char* const riscv_sim_info[] = {
     "author=jdoug344",
     "api=1.0",
+    "disasm",
     NULL
 };
 
@@ -81,10 +82,8 @@ void rsk_cpu_signal(rsk_signal_t signal) {
 }
 
 int rsk_cpu_run(int cycles) {
-	int count = 0;
-
-	while (cpu_execute(cpu)) count++;
-	if (count > 0) count++; // include ebreak in count
+    unsigned int record = cpu_stat_instructions(cpu);
+	while (cpu_execute(cpu));
 	
-    return count;
+    return cpu_stat_instructions(cpu) - record;
 }

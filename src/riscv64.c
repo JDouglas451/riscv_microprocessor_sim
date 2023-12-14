@@ -21,7 +21,7 @@ typedef struct riscv64_instruction_type {
 	size_t (*disassemble)(riscv_cpu_t* const cpu, word instr, char* buffer, size_t buffer_size);
 
 	// Execute an instruction of this type and return 1 if pc was changed (zero otherwise)
-	void (*execute)(riscv_cpu_t* const cpu, word instr, int* updated_pc);
+	void (*execute)(riscv_cpu_t* const cpu, word instr, int* updated_pc, int* loaded, int* stored);
 } riscv_instr_t;
 
 // A set of potentially many lists of instruction types
@@ -181,7 +181,7 @@ static inline sword jtype_imm(word instr) {
 // ---------- Disassembly/Execution Function Names ----------
 
 #define DISASM_DEF(name) size_t z_disasm_##name(riscv_cpu_t* const cpu, word instr, char* buffer, size_t buffer_size)
-#define EXEC_DEF(name)   void z_exec_##name(riscv_cpu_t* const cpu, word instr, int* updated_pc)
+#define EXEC_DEF(name)   void z_exec_##name(riscv_cpu_t* const cpu, word instr, int* updated_pc, int* loaded, int* stored)
 
 #define DISASM_FMT(format, ...) snprintf(buffer, buffer_size, format __VA_OPT__(, ) __VA_ARGS__)
 
@@ -200,10 +200,10 @@ static inline sword jtype_imm(word instr) {
 #define GET_PC       cpu_get_pc(cpu)
 #define SET_PC(addr) *updated_pc = 1; cpu_set_pc(cpu, addr)
 
-#define STORE_BYTE(addr, value)  cpu_store_byte(cpu, addr, value)
-#define STORE_HWORD(addr, value) cpu_store_hword(cpu, addr, value)
-#define STORE_WORD(addr, value)  cpu_store_word(cpu, addr, value)
-#define STORE_DWORD(addr, value) cpu_store_dword(cpu, addr, value)
+#define STORE_BYTE(addr, value)  *stored=1; cpu_store_byte(cpu, addr, value)
+#define STORE_HWORD(addr, value) *stored=1; cpu_store_hword(cpu, addr, value)
+#define STORE_WORD(addr, value)  *stored=1; cpu_store_word(cpu, addr, value)
+#define STORE_DWORD(addr, value) *stored=1; cpu_store_dword(cpu, addr, value)
 
 #define LOAD_BYTE(addr)  cpu_load_byte(cpu, addr)
 #define LOAD_HWORD(addr) cpu_load_hword(cpu, addr)
@@ -418,6 +418,10 @@ void cpu_fill_stats(const riscv_cpu_t* const cpu, rsk_stat_t* stats) {
     stats->store_misses = cpu->stats.store_misses;
 }
 
+unsigned int cpu_stat_instructions(riscv_cpu_t* const cpu) {
+    return cpu->stats.instructions;
+}
+
 const char* const cpu_identify_instr(riscv_cpu_t* const cpu, word instr) {
     riscv_instr_t* itype = registry_search(&cpu->instruction_set, instr);
     if (NULL == itype) return NULL;
@@ -426,7 +430,7 @@ const char* const cpu_identify_instr(riscv_cpu_t* const cpu, word instr) {
 
 void cpu_disassemble_instr(riscv_cpu_t* const cpu, char* buffer, size_t buffer_size, word instr) {
     if (NULL == cpu) return;
-	if (buffer_size < 32) return;
+	if (buffer_size < 36) return;
 
 	char* bp = buffer;
 	size_t bps = buffer_size;
@@ -472,8 +476,12 @@ int cpu_execute(riscv_cpu_t* const cpu) {
 	}
 
 	int updated_pc = 0;
-	itype->execute(cpu, instr, &updated_pc);
+    int loaded_val = 0;
+    int stored_val = 0;
+
+	itype->execute(cpu, instr, &updated_pc, &loaded_val, &stored_val);
 	if (!updated_pc) cpu->pc += 4;
+    cpu->stats.instructions += 1;
 
 	return 1;
 }
