@@ -275,7 +275,7 @@ DISASM_DEF(bltu) {
 }
 
 EXEC_DEF(bltu) {
-    if (READ_REG((GET_RS1) < READ_REG(GET_RS2))) {
+    if (READ_REG(GET_RS1) < READ_REG(GET_RS2)) {
         SET_PC(GET_PC + btype_imm(instr));
     }
 }
@@ -358,7 +358,7 @@ riscv_instr_t rv64i_instructions[] = {
 		.name = "xori",
 		.mask =    INSTR_OPCODE |    INSTR_FUNCT3,
 		.required_bits = OPCODE(0010011) | FUNCT3(100),
-		INSTR_LINKS(addi)
+		INSTR_LINKS(xori)
 	},
 
 	// Or immediate (ori)
